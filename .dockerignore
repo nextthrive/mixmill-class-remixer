@@ -1,0 +1,14 @@
+.git
+.claude
+.agents
+.codex
+data
+data-dev
+docs
+tests
+tools
+**/__pycache__
+**/*.pyc
+.env
+.env.*
+!.env.example

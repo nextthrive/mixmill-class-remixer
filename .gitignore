@@ -1,0 +1,12 @@
+data/
+data-dev/
+.build/
+dist/
+artifacts/
+.venv/
+.venv-build/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example

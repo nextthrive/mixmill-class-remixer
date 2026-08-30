@@ -1,0 +1,62 @@
+services:
+  mixmill:
+    build: .
+    container_name: mixmill
+    init: true
+    user: "${MIXMILL_UID:-10001}:${MIXMILL_GID:-10001}"
+    read_only: true
+    ports:
+      # Publish on every host interface so the app is reachable through the
+      # NAS/Docker host IP, for example http://192.168.1.20:2999.
+      - "${MIXMILL_PORT:-2999}:8080"
+    volumes:
+      - type: bind
+        source: ${MIXMILL_MEDIA_PATH:?Set MIXMILL_MEDIA_PATH to the exact media library}
+        target: /LM
+        read_only: true
+        bind:
+          # A typo must fail instead of silently creating and scanning a folder.
+          create_host_path: false
+      - type: bind
+        source: ${MIXMILL_DATA_PATH:?Set MIXMILL_DATA_PATH to a dedicated MixMill directory}
+        target: /data
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777
+    environment:
+      VIDEO_DIR: /LM
+      DATA_DIR: /data
+      MIXMILL_REQUIRE_READ_ONLY: "1"
+      MIXMILL_USERNAME: ${MIXMILL_USERNAME:?Set a MixMill username}
+      MIXMILL_PASSWORD: ${MIXMILL_PASSWORD:?Set a MixMill password}
+      MIXMILL_MAX_BODY_BYTES: ${MIXMILL_MAX_BODY_BYTES:-1048576}
+      MIXMILL_MEDIA_TIMEOUT: ${MIXMILL_MEDIA_TIMEOUT:-3600}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: ${MIXMILL_MEMORY_LIMIT:-4g}
+    cpus: ${MIXMILL_CPU_LIMIT:-2.0}
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 4096
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mixmill_net
+
+networks:
+  mixmill_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.208.0.0/24

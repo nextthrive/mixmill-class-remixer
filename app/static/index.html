@@ -1,0 +1,3383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MixMill</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" id="theme-color" content="#0b0d0b">
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
+<!-- iOS ignores the SVG icon; without this the home-screen tile is a screenshot -->
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MixMill">
+<script>
+  try {
+    const savedTheme = localStorage.getItem("mixmill-theme");
+    if (savedTheme === "light" || savedTheme === "dark") {
+      document.documentElement.dataset.theme = savedTheme;
+    }
+  } catch {}
+</script>
+<style>
+  @font-face {
+    font-family: "Anton";
+    src: url("/fonts/Anton-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  :root {
+    color-scheme: dark;
+    /* Paired green-tinted palettes keep both themes identifiably Mixmill. */
+    --bg: light-dark(#f3f6f1, #0b0d0b);
+    --panel: light-dark(#fbfdf9, #121512);
+    --panel2: light-dark(#e9eee7, #1a1e1a);
+    --panel3: light-dark(#dfe6dc, #202520);
+    --line: light-dark(#cdd6cc, #2c322d);
+    --line-strong: light-dark(#aab7ab, #3a433b);
+    --text: light-dark(#172019, #f1f5f1);
+    --dim: light-dark(#5d6a61, #98a199);
+    --accent: light-dark(#007a36, #00e05f);
+    --accent-hover: light-dark(#00662d, #2bff82);
+    --accent-soft: light-dark(#dff1e3, #102a19);
+    --accent-ink: light-dark(#f6fff8, #04180b);
+    --green: var(--accent);
+    --red: light-dark(#b92d32, #ff5c5c);
+    --red-soft: light-dark(#fbe9e7, #2b1515);
+    --success-border: light-dark(#89c69b, #1d6e3c);
+    --danger-border: light-dark(#d9a0a0, #743030);
+    --surface-header: light-dark(#f8faf6, #080a08);
+    --surface-raised: light-dark(#f7faf5, #0f120f);
+    --surface-active: light-dark(#e6f4e9, #111a14);
+    --surface-hover: light-dark(#eff4ed, #151915);
+    --surface-empty: light-dark(#f7f9f5, #0e110e);
+    --surface-toast: light-dark(#172019, #080908);
+    --toast-text: #f6fff8;
+    --media-bg: light-dark(#070a07, #050705);
+    --popover-shadow: 0 12px 30px light-dark(rgba(23, 32, 25, .16), rgba(0, 0, 0, .38));
+
+    /* Shared rhythm and component dimensions. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 40px;
+    --content-max: 1480px;
+    --page-gutter: clamp(16px, 3vw, 40px);
+    --control-height: 38px;
+    --control-height-small: 32px;
+    --touch-target: 44px;
+    --radius-status: 3px;
+    --body-font: Aptos, "Segoe UI", sans-serif;
+    --display: "Anton", "Arial Narrow", Impact, sans-serif;
+    --motion-fast: 140ms;
+    --motion-standard: 160ms;
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) { color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+  .skip-link { position: fixed; top: var(--space-2); left: var(--space-2); z-index: 30; padding: 10px 14px; border: 1px solid var(--accent); background: var(--surface-header); color: var(--text); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; transform: translateY(-150%); transition: transform var(--motion-fast) var(--ease-out); }
+  .skip-link:focus { transform: translateY(0); }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  body { margin: 0; min-height: 100vh; font-family: var(--body-font); line-height: 1.4; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  header { display: flex; align-items: baseline; gap: var(--space-6); padding: 0 var(--page-gutter); background: var(--surface-header); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-family: var(--display); font-size: 26px; font-weight: 400; margin: 0; letter-spacing: 1px; padding: var(--space-4) 0; }
+  header h1 span { color: var(--accent); }
+  nav { display: flex; gap: var(--space-1); align-self: stretch; }
+  nav button { background: none; border: none; border-bottom: 3px solid transparent; color: var(--dim); font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 0 14px; cursor: pointer; transition: border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+  .theme-toggle { align-self: center; margin-left: auto; gap: var(--space-2); white-space: nowrap; }
+  .theme-icon { width: 16px; height: 16px; flex: 0 0 auto; }
+  .theme-icon-moon { display: none; }
+  :root[data-theme="light"] .theme-icon-sun { display: none; }
+  :root[data-theme="light"] .theme-icon-moon { display: block; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .theme-icon-sun { display: none; }
+    :root:not([data-theme]) .theme-icon-moon { display: block; }
+  }
+  main { width: 100%; max-width: var(--content-max); margin: 0 auto; padding: var(--space-6) var(--page-gutter) 60px; }
+  h2 { font-family: var(--display); font-size: clamp(22px, 1.8vw, 28px); line-height: 1.05; font-weight: 400; color: var(--text); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 var(--space-4); }
+  .btn { min-height: var(--control-height); display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 0; padding: var(--space-2) var(--space-4); cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.35px; line-height: 1; text-decoration: none; text-transform: uppercase; transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
+  .btn:hover { background: var(--panel2); border-color: var(--accent); color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-ink); }
+  .btn.small { min-height: var(--control-height-small); padding: 5px 10px; font-size: 10px; }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .btn:disabled, .btn:disabled:hover { opacity: .45; cursor: not-allowed; border-color: var(--line); color: var(--text); }
+  input[type=text] { min-height: var(--control-height); background: var(--panel); border: 1px solid var(--line); border-radius: 0; color: var(--text); padding: 8px var(--space-3); font-family: inherit; font-size: 13px; }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  input[type=text]:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+  select { min-height: var(--control-height); background: var(--panel); border: 1px solid var(--line); border-radius: 0; color: var(--text); padding: 5px var(--space-2); font-family: inherit; font-size: 12px; max-width: 240px; }
+  input::placeholder { color: var(--dim); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: 14px var(--space-4); margin: 0 0 -1px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+  .card.static { cursor: default; }
+  .card:hover { border-color: var(--accent); position: relative; z-index: 1; }
+  .card.static:hover { border-color: var(--line); position: static; z-index: auto; }
+  .card > *, .card .meta { min-width: 0; }
+  .card .meta { color: var(--dim); font-size: 12px; margin-top: 2px; overflow-wrap: anywhere; }
+  .muted { color: var(--dim); font-size: 13px; }
+  .row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+  .section-header { align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+  .section-header > h2 { margin-bottom: 0; padding-top: 5px; }
+  .section-tools { gap: var(--space-2); }
+  .viewtoggle { gap: 0; flex-wrap: nowrap; }
+  .surface { background: var(--panel); border: 1px solid var(--line); }
+  .control-group { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+  .eyebrow { color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; line-height: 1; text-transform: uppercase; }
+  .section-copy { max-width: 62ch; color: var(--dim); font-size: 13px; line-height: 1.45; }
+  .status-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 3px 8px; border: 1px solid var(--line); border-radius: var(--radius-status); background: var(--panel2); color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .8px; line-height: 1; text-transform: uppercase; }
+  .status-chip.success { border-color: var(--success-border); background: var(--accent-soft); color: var(--green); }
+  .status-chip.danger { border-color: var(--danger-border); background: var(--red-soft); color: var(--red); }
+  .stat { display: grid; gap: var(--space-1); min-width: 0; }
+  .stat-value { color: var(--text); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-label { color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .library-masthead { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .library-glyph { width: 32px; height: 32px; flex: 0 0 auto; color: var(--accent); }
+  .library-heading { min-width: 0; }
+  .library-heading h2 { margin-bottom: 0; }
+  .library-heading .section-copy { margin: var(--space-1) 0 0; }
+  .program-summary { display: flex; align-items: stretch; justify-content: space-between; min-height: 78px; margin-bottom: var(--space-4); }
+  .program-identity { display: flex; align-items: center; gap: var(--space-3); min-width: 280px; padding: var(--space-3) var(--space-4); }
+  .program-mark { width: 52px; height: 52px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line-strong); background: var(--panel2); color: var(--text); font-family: var(--display); font-size: 15px; letter-spacing: 1px; line-height: 1; }
+  .program-mark::after { content: ""; width: 34px; height: 3px; margin-top: -14px; background: var(--accent); transform: skewX(-22deg); }
+  .program-name { margin-top: 5px; color: var(--text); font-family: var(--display); font-size: 20px; letter-spacing: .7px; line-height: 1; text-transform: uppercase; }
+  .program-stats { display: grid; grid-template-columns: repeat(3, minmax(100px, 1fr)); min-width: 390px; border-left: 1px solid var(--line); }
+  .program-stats .stat { align-content: center; padding: var(--space-3) var(--space-5); border-left: 1px solid var(--line); }
+  .program-stats .stat:first-child { border-left: 0; }
+  .program-stats .stat-value.success { color: var(--green); }
+  .library-toolbar { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-3); border: 1px solid var(--line); background: var(--surface-raised); }
+  .toolbar-group { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+  .toolbar-view { flex: 0 0 auto; gap: 0; }
+  .toolbar-browse { flex: 1 1 auto; }
+  .toolbar-actions { flex: 0 0 auto; margin-left: auto; }
+  .toolbar-view .btn { width: 38px; min-width: 38px; padding: 0; }
+  .toolbar-view .btn + .btn { margin-left: -1px; }
+  .toolbar-icon { width: 16px; height: 16px; flex: 0 0 auto; }
+  .toolbar-select { min-height: var(--control-height); flex: 0 0 auto; display: flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: var(--panel); color: var(--dim); white-space: nowrap; }
+  .toolbar-select > span { padding-left: var(--space-3); font-size: 11px; font-weight: 700; letter-spacing: .4px; }
+  .toolbar-select select { min-height: 36px; max-width: 170px; padding-left: 0; border: 0; background: transparent; color: var(--text); }
+  .toolbar-select:focus-within { border-color: var(--accent); }
+  .search-control { min-width: 190px; flex: 1 1 240px; min-height: var(--control-height); display: flex; align-items: center; border: 1px solid var(--line); background: var(--panel); color: var(--dim); }
+  .search-control:focus-within { border-color: var(--accent); color: var(--accent); }
+  .search-control > .toolbar-icon { margin-left: var(--space-3); }
+  .search-control input { width: 100%; min-width: 0; min-height: 36px; padding-inline: var(--space-2); border: 0; background: transparent; }
+  .search-clear { width: 34px; height: 34px; flex: 0 0 auto; border: 0; background: transparent; color: var(--dim); cursor: pointer; font: inherit; font-size: 18px; transition: color var(--motion-fast) var(--ease-out); }
+  .search-clear:hover { color: var(--text); }
+  .filter-count-badge { min-width: 18px; height: 18px; display: inline-grid; place-items: center; padding: 0 5px; border-radius: var(--radius-status); background: var(--accent); color: var(--accent-ink); font-size: 9px; font-weight: 800; letter-spacing: 0; }
+  video { width: 100%; max-height: 56vh; background: var(--media-bg); border-radius: 0; color-scheme: dark; }
+  audio { border-radius: 0; color-scheme: dark; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td, th { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { color: var(--dim); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; }
+  #track-rows tr.current-segment td { background: var(--surface-active); border-bottom-color: var(--accent); }
+  #track-rows tr.current-segment td:first-child { color: var(--accent); font-weight: 700; }
+  .tracktime { min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; white-space: nowrap; font-variant-numeric: tabular-nums; transition: color var(--motion-fast) var(--ease-out); }
+  .tracktime:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) {
+    .npbar .btn { min-height: var(--touch-target); min-width: 56px; font-size: 12px; }
+  }
+  .pill { display: inline-block; background: var(--panel2); border-radius: var(--radius-status); padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-left: 8px; }
+  .mixitem { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 0; margin-bottom: -1px; background: var(--panel); transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+  .mixitem.playing { border-color: var(--accent); background: var(--surface-active); position: relative; z-index: 1; }
+  .playing-label { color: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap; }
+  .playback-labels { display: grid; justify-items: end; gap: 3px; }
+  .matched-song { color: var(--text); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+  .notes-state { color: var(--dim); font-size: 10px; margin-top: 3px; letter-spacing: .3px; }
+  .notes-state.ready { color: var(--green); }
+  .notes-state.stale { color: var(--red); }
+  .mixitem.dropping { border-color: var(--accent); position: relative; z-index: 1; }
+  .mixitem[draggable=true] { cursor: grab; }
+  .mixitem .grow { flex: 1; min-width: 0; }
+  .mixitem .name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .mixitem .sub { font-size: 11px; color: var(--dim); margin-top: 1px; overflow-wrap: anywhere; }
+  .addtrack { cursor: pointer; }
+  .addtrack:hover { border-color: var(--accent); position: relative; z-index: 1; }
+  progress { width: 140px; height: 6px; accent-color: var(--accent); }
+  .toast { position: fixed; bottom: var(--space-5); left: 50%; max-width: min(560px, calc(100% - 32px)); transform: translateX(-50%); background: var(--surface-toast); border: 1px solid var(--accent); border-radius: 0; color: var(--toast-text); padding: var(--space-3) 20px; font-size: 12px; font-weight: 600; letter-spacing: .5px; overflow-wrap: anywhere; z-index: 20; }
+  .toast.error { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+  .hidden { display: none !important; }
+  .backlink { min-height: 32px; display: inline-flex; align-items: center; margin: 0 0 14px; padding: 0; border: 0; background: transparent; color: var(--dim); cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .backlink:hover { color: var(--accent); }
+  details { margin-bottom: 14px; }
+  summary { cursor: pointer; padding: 10px 2px; font-family: var(--display); font-size: 17px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; list-style: none; transition: color var(--motion-fast) var(--ease-out); }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "+"; color: var(--accent); margin-right: 10px; font-family: var(--body-font); font-weight: 700; }
+  details[open] summary::before { content: "–"; }
+  summary:hover { color: var(--accent); }
+  .library-filter-menu { position: relative; margin: 0; }
+  .library-filter-menu > summary { min-height: var(--control-height); display: inline-flex; align-items: center; gap: var(--space-2); padding: 8px var(--space-3); font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.1px; line-height: 1; text-transform: uppercase; list-style: none; white-space: nowrap; }
+  .library-filter-menu > summary::before { display: none; content: none; }
+  .library-filter-menu[open] > summary { border-color: var(--accent); color: var(--accent); }
+  .filter-popover { position: absolute; top: calc(100% + 7px); right: 0; z-index: 8; width: 250px; border: 1px solid var(--line-strong); background: var(--surface-raised); box-shadow: var(--popover-shadow); }
+  .filter-popover-heading { padding: var(--space-3); border-bottom: 1px solid var(--line); }
+  .filter-options { display: grid; padding: var(--space-2); }
+  .filter-option { min-height: 38px; display: flex; align-items: center; gap: 10px; padding: 7px var(--space-2); color: var(--text); cursor: pointer; font-size: 12px; }
+  .filter-option:hover { background: var(--panel2); }
+  .filter-option input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .filter-option span { flex: 1; }
+  .filter-popover-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); border-top: 1px solid var(--line); }
+  .filter-popover-footer .btn { flex: 1 1 auto; }
+  .library-results-meta { min-height: 24px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: -6px 0 var(--space-2); color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .library-results-meta strong { color: var(--text); font-weight: 700; }
+  #library-result-count { display: inline-flex; align-items: baseline; gap: var(--space-1); white-space: nowrap; }
+  .library-results-context { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .library-state { min-height: 150px; display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-2); padding: var(--space-5); border: 1px dashed var(--line-strong); background: var(--surface-empty); }
+  .library-state.error { border-color: var(--danger-border); background: var(--red-soft); }
+  .library-state-glyph { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--line-strong); color: var(--accent); font-family: var(--display); font-size: 22px; }
+  .library-state.error .library-state-glyph { border-color: var(--danger-border); color: var(--red); }
+  .library-state-copy { min-width: 0; flex: 1 1 auto; }
+  .library-state-title { color: var(--text); font-family: var(--display); font-size: 18px; letter-spacing: .8px; text-transform: uppercase; }
+  .library-state-copy p { max-width: 62ch; margin: var(--space-1) 0 0; color: var(--dim); font-size: 12px; line-height: 1.45; }
+  .library-state .btn { flex: 0 0 auto; }
+  details .card { margin-left: 22px; }
+  details .mixitem { margin-left: 0; }
+  .npbar { background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: var(--space-3) var(--space-4); margin-top: var(--space-3); display: flex; align-items: center; gap: var(--space-3); }
+  .grow, .playback-copy { flex: 1 1 auto; min-width: 0; }
+  .release-title-input { flex: 1 1 auto; min-width: 200px; font-size: 16px !important; }
+  .release-program-input { width: 180px; }
+  .media-stage, .track-table, .playlist { margin-top: var(--space-3); }
+  .transport-row, .marker-row { margin-top: var(--space-2); }
+  .new-track-input { flex: 1 1 auto; min-width: 160px; }
+  .shortcut-hint { margin: var(--space-1) 0 0; }
+  .rejected-section { margin-top: var(--space-3); }
+  .music-section { margin-top: var(--space-5); }
+  .notes-studio { margin-top: var(--space-4); border: 1px solid var(--line); background: var(--surface-raised); }
+  .notes-studio > summary { min-height: 54px; display: flex; align-items: center; gap: var(--space-2); padding: 10px var(--space-4); }
+  .notes-studio > summary .status-chip { margin-left: auto; font-family: var(--body-font); }
+  .notes-studio-body { border-top: 1px solid var(--line); }
+  .notes-studio-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--panel); }
+  .notes-studio-source { min-width: 0; }
+  .notes-studio-source strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .notes-studio-source span { display: block; margin-top: 2px; color: var(--dim); font-size: 10px; }
+  .notes-studio-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+  .notes-review-banner { min-height: 38px; display: flex; align-items: center; padding: 8px var(--space-4); border-bottom: 1px solid var(--danger-border); background: var(--red-soft); color: var(--red); font-size: 11px; }
+  .notes-review-banner.neutral { border-color: var(--line); background: var(--panel2); color: var(--dim); }
+  .notes-studio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 320px); }
+  .notes-mapping-list { min-width: 0; }
+  .notes-map-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.15fr) auto; align-items: center; gap: var(--space-3); min-height: 68px; padding: 10px var(--space-4); border-bottom: 1px solid var(--line); }
+  .notes-map-row:last-child { border-bottom: 0; }
+  .notes-map-row:hover { background: var(--surface-hover); }
+  .notes-map-name { min-width: 0; }
+  .notes-map-name strong { display: block; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .notes-map-meta { margin-top: 4px; color: var(--dim); font-size: 10px; }
+  .notes-map-meta.success { color: var(--green); }
+  .notes-map-meta.danger { color: var(--red); }
+  .notes-map-control { min-width: 0; }
+  .notes-map-control select { width: 100%; max-width: none; }
+  .notes-custom-range { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: 6px; margin-top: 6px; }
+  .notes-custom-range input { width: 100%; min-width: 0; min-height: 32px; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 5px 7px; font: inherit; font-size: 12px; }
+  .notes-custom-range input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .notes-map-preview { min-width: 0; }
+  .notes-preview { min-height: 330px; padding: var(--space-3); border-left: 1px solid var(--line); background: var(--surface-empty); }
+  .notes-preview-empty { min-height: 300px; display: grid; place-content: center; padding: var(--space-4); color: var(--dim); font-size: 11px; text-align: center; }
+  .notes-preview img { width: 100%; max-height: 420px; display: block; object-fit: contain; border: 1px solid var(--line); background: white; }
+  .notes-preview-tools { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: var(--space-2); }
+  .notes-preview-label { min-width: 0; overflow: hidden; color: var(--dim); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .notes-preview-jump { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 7px; color: var(--dim); font-size: 10px; }
+  .notes-preview-jump input { width: 62px; min-height: 32px; padding: 5px 7px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; text-align: center; }
+  .notes-loading { padding: var(--space-4); color: var(--dim); font-size: 11px; }
+  .full-audio { width: 100%; margin-bottom: var(--space-2); }
+  .playback-indicator { flex: 0 0 auto; color: var(--accent); font-size: 18px; line-height: 1; }
+  .playback-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .program-options { gap: var(--space-2); }
+  .mix-title { color: var(--text); font-size: 20px; text-transform: none; }
+  .now-playing-banner { margin: 0 0 var(--space-2); }
+  .preview-panel { margin-bottom: var(--space-2); }
+  .preview-banner { margin: 0 0 var(--space-2); }
+  .preview-video { max-height: 240px; }
+  .preview-close { margin-top: var(--space-1); }
+  .picker-filter { width: 100%; margin-bottom: var(--space-2); }
+  .player-copy { flex: 1 1 auto; min-width: 0; }
+  .player-title { font-size: 15px; }
+  .pill.success { color: var(--green); }
+  .program-chip { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: 0; cursor: pointer; }
+  .program-chip input { accent-color: var(--accent); vertical-align: -2px; }
+  .export-status-failed { color: var(--red); }
+  .queue-index { width: 22px; flex: 0 0 auto; text-align: right; font-variant-numeric: tabular-nums; }
+  .viewtoggle .btn.active { border-color: var(--accent); color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); grid-auto-rows: 1fr; align-items: stretch; gap: clamp(10px, 1vw, 14px); margin-top: var(--space-2); }
+  .gcard { position: relative; min-width: 0; display: flex; flex-direction: column; content-visibility: auto; contain-intrinsic-size: auto 230px; background: var(--panel); border: 1px solid var(--line); transition: border-color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out); }
+  .gcard:hover { border-color: var(--line-strong); background: var(--surface-hover); }
+  .gcard-main { all: unset; box-sizing: border-box; width: 100%; flex: 1 1 auto; display: block; color: var(--text); text-align: left; cursor: pointer; }
+  .gcard-main:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; position: relative; z-index: 2; }
+  .gcard-media { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); background: var(--surface-header); }
+  .gcard .thumb { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; display: block; background: var(--surface-header); transition: filter var(--motion-standard) var(--ease-out), opacity var(--motion-standard) var(--ease-out); }
+  .gcard:hover .thumb { filter: brightness(1.08) contrast(1.02); }
+  .gcard .noimg { width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: var(--panel2); color: var(--dim); font-family: var(--display); font-size: 18px; letter-spacing: 1px; transition: opacity var(--motion-standard) var(--ease-out); }
+  .gcard.curated { border-color: var(--success-border); }
+  .gcard.curated:hover { border-color: var(--green); }
+  .gcard.curated .gtitle { color: var(--green); }
+  .gcard.missing .thumb, .gcard.missing .noimg { opacity: .46; filter: grayscale(.35); }
+  .curated-badge { position: absolute; top: var(--space-2); right: var(--space-2); width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--accent); border-radius: var(--radius-status); background: var(--accent); color: var(--accent-ink); font-size: 15px; font-weight: 900; line-height: 1; }
+  .gcard .gbody { padding: 10px var(--space-3) var(--space-3); }
+  .gcard .gtitle { font-size: 13px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .release-card .gbody { min-height: 94px; display: flex; flex-direction: column; }
+  .gmeta { min-width: 0; display: flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--dim); font-size: 12px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .gmeta-icon { width: 14px; height: 14px; flex: 0 0 auto; }
+  .meta-separator { color: var(--line-strong); }
+  .release-status { width: fit-content; max-width: 100%; margin-top: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .release-status.detected { color: var(--text); }
+  .release-status.undetected { color: var(--dim); }
+  .gcard-footer { padding: var(--space-2) var(--space-3); border-top: 1px solid var(--line); }
+  .gcard-footer .btn { width: 100%; }
+  .skeleton-card { pointer-events: none; }
+  .skeleton-block, .skeleton-line { background: var(--panel2); animation: skeleton-pulse 1.2s ease-in-out infinite alternate; }
+  .skeleton-block { width: 100%; aspect-ratio: 16/9; border-bottom: 1px solid var(--line); }
+  .skeleton-body { min-height: 94px; padding: 10px var(--space-3) var(--space-3); }
+  .skeleton-line { height: 10px; margin-bottom: 9px; }
+  .skeleton-line.title { width: 72%; height: 13px; }
+  .skeleton-line.meta { width: 54%; }
+  .skeleton-line.status { width: 44%; height: 24px; margin-top: 14px; margin-bottom: 0; }
+  @keyframes skeleton-pulse { from { opacity: .42; } to { opacity: .86; } }
+  .release-list-card { padding: 0; content-visibility: auto; contain-intrinsic-size: auto 72px; }
+  .release-list-main { all: unset; box-sizing: border-box; min-width: 0; flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 14px var(--space-4); color: var(--text); cursor: pointer; }
+  .release-list-main:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .release-list-copy { min-width: 0; }
+  .release-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .release-list-card.curated .release-list-title { color: var(--green); }
+  .release-list-card.missing .release-list-title { color: var(--dim); }
+  .release-list-card > .btn { flex: 0 0 auto; margin-right: var(--space-4); }
+  .library-load-more { min-height: 48px; grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; padding: var(--space-3) 0; }
+  .card-button { width: 100%; color: var(--text); font: inherit; text-align: left; }
+  .mix-row-actions { display: flex; align-items: center; gap: 4px; }
+  .add-symbol { min-width: 24px; text-align: center; color: var(--accent); font-size: 18px; }
+  .manual-mix-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(310px, auto); align-items: end; gap: clamp(18px, 3vw, 44px); margin: 4px 0 16px; padding: clamp(18px, 2.2vw, 28px); border: 1px solid var(--accent); background: var(--surface-active); }
+  .manual-mix-kicker { display: block; margin-bottom: 7px; color: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; }
+  .manual-mix-panel h3 { margin: 0; font-family: var(--display); font-size: clamp(22px, 2.6vw, 32px); font-weight: 400; letter-spacing: 1.2px; text-transform: uppercase; }
+  .manual-mix-panel p { max-width: 58ch; margin: 6px 0 0; color: var(--dim); font-size: 12px; line-height: 1.5; }
+  .manual-mix-form { min-width: 0; display: grid; grid-template-columns: minmax(180px, 1fr) auto; align-items: end; gap: 8px; }
+  .manual-mix-field { min-width: 0; display: grid; gap: 6px; }
+  .manual-mix-field input { width: 100%; min-width: 0; max-width: none; }
+  .generator-panel { border: 1px solid var(--line); background: var(--panel); margin: 0 0 20px; }
+  .generator-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; border-bottom: 1px solid var(--line); }
+  .generator-heading h3 { margin: 0; font-family: var(--display); font-size: 18px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; }
+  .generator-heading p { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
+  .generator-row { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(140px, .8fr) minmax(160px, 1fr) minmax(100px, .55fr) auto; gap: 12px; align-items: end; padding: 16px; }
+  .generator-field { display: grid; gap: 6px; min-width: 0; }
+  .generator-field > input, .generator-field > select { width: 100%; max-width: none; min-width: 0; }
+  .field-label { color: var(--dim); font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .generator-programs-field { padding: 0 16px 16px; }
+  #gen-programs { margin-top: 6px; }
+  .generator-advanced { margin: 0; border-top: 1px solid var(--line); }
+  .generator-advanced summary { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4); font-family: var(--body-font); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; }
+  .generator-advanced summary::before { margin-right: 0; }
+  .filter-count { margin-left: auto; color: var(--dim); font-size: 9px; }
+  .advanced-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 12px; padding: 4px 16px 18px 38px; }
+  .advanced-grid .wide { grid-column: span 2; }
+  .advanced-tuning { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+  .advanced-toggles { display: grid; gap: 10px; align-content: start; }
+  .range-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .field-help { color: var(--dim); font-size: 10px; line-height: 1.35; }
+  .pool-help { margin: -4px 16px 14px; color: var(--dim); font-size: 11px; }
+  .toggle-field { display: flex; align-items: flex-start; gap: 9px; min-height: var(--touch-target); padding-top: 2px; cursor: pointer; }
+  .toggle-field input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--accent); }
+  .toggle-copy { display: grid; gap: 3px; }
+  .curation-strip { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .curation-copy { display: grid; gap: 3px; }
+  .curation-state { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .curation-state.active { color: var(--green); }
+  #rejected-list .mixitem { cursor: default; opacity: .8; }
+  .mix-header { display: grid; gap: 14px; }
+  .mix-toolbar { display: flex; align-items: stretch; gap: 0; width: 100%; padding: 12px 0; border-block: 1px solid var(--line); }
+  .mix-action-group { display: grid; align-content: start; gap: 7px; padding: 0 14px; border-left: 1px solid var(--line); }
+  .mix-action-group:first-child { padding-left: 0; border-left: 0; }
+  .mix-action-group.downloads { flex: 1 1 auto; }
+  .mix-action-label { color: var(--dim); font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+  .mix-action-buttons { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
+  .mix-action-buttons .btn { white-space: nowrap; }
+  .btn, nav button, summary, .card, .gcard, .mixitem { touch-action: manipulation; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn[aria-busy="true"], .btn[aria-busy="true"]:disabled { cursor: progress; }
+  .btn[aria-busy="true"] .toolbar-icon { animation: busy-spin .8s linear infinite; }
+  @keyframes busy-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+
+  @media (pointer: coarse) {
+    .btn, nav button, summary, .backlink { min-height: var(--touch-target); }
+    .btn.small { min-width: var(--touch-target); }
+    input[type=text], select { min-height: var(--touch-target); font-size: 16px; }
+    .gcard-main, .release-list-main { min-height: var(--touch-target); }
+    .mixitem, .card { min-height: var(--touch-target); }
+    .tracktime { min-width: var(--touch-target); height: var(--touch-target); vertical-align: middle; }
+    #gen-programs .pill { min-height: var(--touch-target); display: inline-flex; align-items: center; }
+    #gen-programs input { width: 20px; height: 20px; }
+    .search-clear { width: var(--touch-target); height: var(--touch-target); }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1799px) {
+    .library-toolbar { flex-wrap: wrap; }
+    .toolbar-browse { flex: 1 1 calc(100% - 86px); flex-wrap: nowrap; }
+    .search-control { min-width: 240px; flex-basis: 320px; }
+    .toolbar-actions { width: 100%; justify-content: flex-end; margin-left: 0; padding-top: var(--space-3); border-top: 1px solid var(--line); }
+    .toolbar-actions .btn { white-space: nowrap; }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1199px) {
+    .toolbar-browse { flex-wrap: wrap; }
+    .search-control { min-width: min(100%, 260px); }
+  }
+
+  @media (max-width: 1023px) {
+    .section-header, .mix-header { align-items: flex-start; }
+    .section-tools, .mix-toolbar { width: 100%; }
+    .mix-toolbar { justify-content: flex-start; }
+    .program-identity { min-width: 240px; }
+    .program-stats { min-width: 330px; }
+    .program-stats .stat { padding-inline: var(--space-3); }
+    .cols { gap: 22px; }
+  }
+
+  @media (max-width: 639px) {
+    body { overflow-x: hidden; }
+    .btn, nav button, summary, .backlink, input[type=text], select { min-height: var(--touch-target); }
+    .btn.small { min-width: var(--touch-target); }
+    input[type=text], select { font-size: 16px; }
+    header {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0;
+      padding: env(safe-area-inset-top) max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+      align-items: stretch;
+    }
+    header h1 { grid-column: 1; grid-row: 1; align-self: center; font-size: 22px; padding: 9px 2px 6px; }
+    .theme-toggle { grid-column: 3; grid-row: 1; min-width: var(--touch-target); margin-left: var(--space-2); padding-inline: var(--space-3); }
+    .theme-label { display: none; }
+    nav { grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; }
+    nav button { flex: 1 1 25%; min-width: 0; padding: 0 3px; font-size: 11px; letter-spacing: 1px; }
+    main {
+      width: 100%; padding: 18px max(12px, env(safe-area-inset-right)) max(56px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+    h2 { font-size: 20px; margin-bottom: 10px; }
+    .library-masthead { align-items: flex-start; margin-bottom: var(--space-3); }
+    .library-glyph { width: 28px; height: 28px; }
+    .library-heading h2 { margin-bottom: 0; }
+    .library-heading .section-copy { font-size: 13px; }
+    .program-summary { display: block; min-height: 0; margin-bottom: var(--space-3); }
+    .program-identity { min-width: 0; padding: var(--space-3); }
+    .program-mark { width: 46px; height: 46px; }
+    .program-identity > div:last-child { min-width: 0; }
+    .program-name { font-size: 18px; overflow-wrap: anywhere; }
+    .program-stats { width: 100%; min-width: 0; border-top: 1px solid var(--line); border-left: 0; }
+    .program-stats .stat { padding: 10px var(--space-2); }
+    .program-stats .stat-value { font-size: 16px; }
+    .program-stats .stat-label { font-size: 10px; letter-spacing: .7px; }
+    .library-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); padding: var(--space-2); }
+    .toolbar-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; }
+    .toolbar-view .btn { width: 100%; min-width: 0; }
+    .toolbar-browse { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; }
+    .toolbar-select { width: 100%; min-width: 0; }
+    .cover-control, .program-control { grid-column: 1 / -1; }
+    .toolbar-select select { width: 100%; min-width: 0; max-width: none; }
+    .search-control { grid-column: 1 / -1; width: 100%; min-width: 0; }
+    .library-filter-menu { min-width: 0; }
+    .library-filter-menu > summary { width: 100%; justify-content: center; }
+    .filter-popover { position: fixed; top: auto; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: auto; }
+    .toolbar-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; width: 100%; padding-top: var(--space-2); }
+    .toolbar-actions .btn { width: 100%; min-width: 0; padding-inline: var(--space-2); }
+    #btn-extract-all { grid-column: 1 / -1; }
+    .toolbar-actions:has(#btn-auto-all.hidden) #btn-scan { grid-column: 1 / -1; }
+    .backlink { min-height: var(--touch-target); display: inline-flex; align-items: center; margin-bottom: 8px; }
+    .section-header > h2 { width: 100%; }
+    .section-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .section-tools > *, .section-tools .btn, .section-tools select { width: 100%; min-width: 0; max-width: none; }
+    .section-tools .viewtoggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #view-mixes .section-tools .viewtoggle { grid-column: 1 / -1; }
+    #library-filter, #mixes-filter, #new-mix-name, #btn-create-mix { grid-column: 1 / -1; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .gcard .gbody { padding: 9px; }
+    .gcard .gtitle { font-size: 14px; }
+    .release-card .gbody { min-height: 102px; }
+    .gcard .gtitle { display: -webkit-box; overflow: hidden; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+    .release-status { min-height: 28px; white-space: normal; line-height: 1.15; }
+    .library-results-meta { align-items: flex-start; flex-direction: column; gap: 2px; margin-top: -4px; }
+    .library-results-context { overflow: visible; white-space: normal; }
+    .release-list-main { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+    .release-list-card > .btn { width: calc(100% - 24px); margin: 0 12px 12px; }
+    .library-state { min-height: 0; align-items: flex-start; flex-wrap: wrap; padding: var(--space-4); }
+    .library-state-copy { flex-basis: calc(100% - 58px); }
+    .library-state .btn { width: 100%; }
+    details .card { margin-left: 0; }
+    summary { padding: 8px 2px; }
+    .card { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+
+    .release-meta > input, #rel-title, #rel-program { width: 100% !important; min-width: 0 !important; flex-basis: 100%; }
+    .release-meta .btn, .transport-row .btn { flex: 1 1 0; min-width: 0; }
+    .curation-strip { align-items: flex-start; flex-wrap: wrap; }
+    .curation-strip .btn { width: 100%; }
+    .marker-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .marker-row .btn { width: 100%; min-width: 0; }
+    #new-track-name, #pending-range { grid-column: 1 / -1; width: 100% !important; min-width: 0 !important; }
+    #pending-range { min-height: 30px; display: flex; align-items: center; }
+    video { max-height: 48svh; }
+    .npbar { padding: 10px 12px; gap: 10px; align-items: flex-start; }
+
+    #view-release table, #view-release thead, #view-release tbody, #view-release tr, #view-release td { display: block; width: 100%; }
+    #view-release thead { display: none; }
+    #track-rows tr { background: var(--panel); border: 1px solid var(--line); margin-bottom: 10px; padding: 8px 10px; }
+    #track-rows tr.current-segment { border-color: var(--accent); background: var(--surface-active); }
+    #track-rows tr.current-segment td { background: transparent; border-bottom-color: var(--line); }
+    #track-rows td { display: grid; grid-template-columns: minmax(96px, 36%) minmax(0, 1fr); gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+    #track-rows td::before { content: attr(data-label); color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    #track-rows td.track-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; border-bottom: 0; padding-top: 10px; }
+    #track-rows td.track-actions::before { grid-column: 1 / -1; }
+    #track-rows .track-actions .btn { width: 100%; min-width: 0; min-height: var(--touch-target); padding-inline: 3px; }
+    .notes-studio > summary { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+    .notes-studio > summary .status-chip { width: 100%; margin-left: 24px; }
+    .notes-studio-head { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+    .notes-studio-actions { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); }
+    .notes-studio-actions .btn { width: 100%; }
+    .notes-review-banner { padding: 10px 12px; }
+    .notes-studio-grid { grid-template-columns: minmax(0, 1fr); }
+    .notes-map-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; }
+    .notes-map-row > .btn { width: 100%; min-height: var(--touch-target); }
+    .notes-preview { min-height: 0; border-top: 1px solid var(--line); border-left: 0; }
+    .notes-preview-empty { min-height: 150px; }
+
+    .manual-mix-panel { grid-template-columns: minmax(0, 1fr); padding: 16px 12px; }
+    .manual-mix-form { grid-template-columns: minmax(0, 1fr); }
+    .manual-mix-form .btn { width: 100%; min-height: var(--touch-target); }
+    .generator-heading { padding: 13px 12px; }
+    .generator-heading p { max-width: 220px; }
+    .generator-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 8px; padding: 12px; }
+    .generator-row > * { width: 100%; min-width: 0; max-width: none; }
+    #btn-generate { grid-column: 1 / -1; }
+    .generator-programs-field { padding: 0 12px 12px; }
+    .generator-advanced summary { padding: 12px; }
+    .advanced-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 2px 12px 14px; gap: 12px 8px; }
+    .advanced-grid .wide { grid-column: 1 / -1; }
+
+    .mix-title-row { width: 100%; }
+    .mix-title-row h2 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .mix-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; }
+    .mix-action-group, .mix-action-group:first-child { padding: 12px 0; border-left: 0; border-top: 1px solid var(--line); }
+    .mix-action-group:first-child { border-top: 0; }
+    .mix-action-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .mix-toolbar .btn { width: 100%; min-width: 0; min-height: var(--touch-target); padding: 8px 5px; justify-content: center; text-align: center; }
+    #btn-audio, #btn-package, #btn-songs-zip, #btn-choreo-notes { grid-column: 1 / -1; }
+    .cols { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .mixitem { flex-wrap: wrap; align-items: flex-start; padding: 11px; gap: 8px; }
+    .mixitem .grow { flex: 1 1 100%; width: 100%; }
+    .playback-labels { width: 100%; justify-items: start; }
+    .mix-row-actions { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .mix-row-actions .btn { width: 100%; min-width: 0; min-height: var(--touch-target); padding: 5px 2px; }
+    #mix-picker .mix-row-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .add-symbol { min-height: var(--touch-target); display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); }
+    #seg-preview { width: 100%; }
+
+    .player-controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+    .player-controls .btn { width: 100%; min-width: 0; min-height: var(--touch-target); padding: 6px 2px; }
+    .player-copy { grid-column: 1 / -1; grid-row: 2; padding-top: 4px; }
+    .player-count { grid-column: 1 / 3; align-self: center; }
+    .player-badge { grid-column: 3 / -1; justify-self: end; align-self: center; margin-left: 0; }
+    .toast { bottom: max(12px, env(safe-area-inset-bottom)); width: calc(100% - 24px); max-width: 420px; padding: 11px 13px; text-align: center; }
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    header { gap: 18px; padding-inline: 18px; }
+    nav button { padding-inline: 10px; }
+    main { padding: 24px 18px 56px; }
+    .library-toolbar { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: start; }
+    .toolbar-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .toolbar-view .btn { width: 38px; min-width: 38px; }
+    .toolbar-browse { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .toolbar-select, .toolbar-select select, .search-control { width: 100%; min-width: 0; max-width: none; }
+    .search-control { grid-column: 1 / -1; }
+    .library-filter-menu > summary { width: 100%; justify-content: center; }
+    .toolbar-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); width: 100%; }
+    .toolbar-actions .btn { width: 100%; min-width: 0; padding-inline: var(--space-2); }
+    .mix-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
+    .mix-action-group, .mix-action-group:first-child { padding: 12px; border-left: 0; border-top: 1px solid var(--line); }
+    .mix-action-buttons { display: flex; }
+    .mix-toolbar .btn { flex: 1 1 auto; }
+  }
+
+  @media (min-width: 480px) and (max-width: 639px) {
+    .cover-control, .program-control { grid-column: auto; }
+  }
+
+  @media (max-width: 359px) {
+    nav button { font-size: 10px; letter-spacing: .6px; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .release-card .gbody { min-height: 94px; }
+    .program-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .program-stats .stat { padding-inline: 4px; }
+    .program-stats .stat-label { letter-spacing: .35px; }
+  }
+
+  @media (max-height: 520px) and (orientation: landscape) and (max-width: 639px) {
+    header { position: static; grid-template-columns: auto minmax(0, 1fr) auto; align-items: stretch; column-gap: var(--space-3); }
+    header h1 { align-self: center; padding-block: 8px; }
+    nav { grid-column: 2; grid-row: 1; }
+    .theme-toggle { grid-column: 3; grid-row: 1; margin-left: 0; }
+    main { padding-top: var(--space-3); }
+    .program-summary { display: flex; }
+    .program-identity { min-width: 200px; }
+    .program-stats { width: auto; min-width: 0; flex: 1 1 auto; }
+    .filter-popover { max-height: calc(100svh - 24px); overflow-y: auto; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header>
+  <h1 aria-label="MixMill"><span>M</span>IX<span>M</span>ILL</h1>
+  <nav aria-label="Primary">
+    <button data-view="library" class="active" type="button" aria-current="page">Library</button>
+    <button data-view="mixes" type="button">Mixes</button>
+    <button data-view="vault" type="button">Vault</button>
+    <button data-view="exports" type="button">Exports</button>
+  </nav>
+  <button class="btn small theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">
+    <svg class="theme-icon theme-icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M13 3l-1.4 1.4M4.4 11.6 3 13"/>
+    </svg>
+    <svg class="theme-icon theme-icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <path d="M13.5 10.4A6 6 0 0 1 5.6 2.5a6 6 0 1 0 7.9 7.9Z"/>
+    </svg>
+    <span class="theme-label" id="theme-toggle-label">Theme</span>
+  </button>
+</header>
+<main id="main-content" tabindex="-1">
+
+  <!-- ============ LIBRARY ============ -->
+  <section id="view-library" aria-labelledby="library-heading">
+    <div class="library-masthead">
+      <svg class="library-glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
+        <path d="M7 5.5h18v21H7zM11 9.5h10M11 14h10M11 18.5h7" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 9v17.5h18" stroke="currentColor" stroke-width="2" opacity=".55"/>
+      </svg>
+      <div class="library-heading">
+        <h2 id="library-heading">Releases</h2>
+        <p class="section-copy">Browse, review, and prepare workout releases.</p>
+      </div>
+    </div>
+    <div class="program-summary surface" id="library-program-summary" role="region" aria-label="Library program summary">
+      <div class="program-identity">
+        <div class="program-mark" aria-hidden="true"><span id="program-summary-mark">ALL</span></div>
+        <div>
+          <div class="eyebrow" id="program-summary-scope">Library scope</div>
+          <div class="program-name" id="program-summary-name">All programs</div>
+        </div>
+      </div>
+      <div class="program-stats" role="list" aria-label="Release status totals">
+        <div class="stat" role="listitem">
+          <span class="stat-value" id="program-summary-total">0</span>
+          <span class="stat-label">Releases</span>
+        </div>
+        <div class="stat" role="listitem">
+          <span class="stat-value success" id="program-summary-curated">0</span>
+          <span class="stat-label">Curated</span>
+        </div>
+        <div class="stat" role="listitem">
+          <span class="stat-value" id="program-summary-review">0</span>
+          <span class="stat-label">Needs review</span>
+        </div>
+      </div>
+    </div>
+    <div class="library-toolbar" role="toolbar" aria-label="Release library controls">
+      <div class="toolbar-group toolbar-view viewtoggle" role="group" aria-label="Release view">
+        <button class="btn small" data-vm="grid" type="button" aria-label="Grid view" title="Grid view">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        </button>
+        <button class="btn small" data-vm="list" type="button" aria-label="List view" title="List view">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 3h2v2H2zm4 0h8v2H6zM2 7h2v2H2zm4 0h8v2H6zM2 11h2v2H2zm4 0h8v2H6z"/></svg>
+        </button>
+      </div>
+      <div class="toolbar-group toolbar-browse" role="group" aria-label="Browse releases">
+        <label class="toolbar-select cover-control">
+          <span>Covers:</span>
+          <select id="library-cover-source" aria-label="Release cover source">
+            <option value="video">Video</option>
+            <option value="music">Music</option>
+          </select>
+        </label>
+        <label class="toolbar-select program-control">
+          <span>Program:</span>
+          <select id="library-program" aria-label="Filter by program">
+            <option value="">All programs</option>
+          </select>
+        </label>
+        <label class="search-control">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+          <input type="text" id="library-filter" maxlength="200" placeholder="Search releases…" aria-label="Search releases">
+          <button class="search-clear hidden" id="library-filter-clear" type="button" aria-label="Clear release search" title="Clear search">×</button>
+        </label>
+        <details class="library-filter-menu" id="library-filter-menu">
+          <summary class="btn">
+            <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 3h12L9.5 8v4l-3 1V8z"/></svg>
+            Filters
+            <span class="filter-count-badge hidden" id="library-filter-count">0</span>
+          </summary>
+          <div class="filter-popover">
+            <div class="filter-popover-heading eyebrow">Release status</div>
+            <div class="filter-options">
+              <label class="filter-option"><input type="checkbox" value="curated" data-library-status><span>Curated</span></label>
+              <label class="filter-option"><input type="checkbox" value="detected" data-library-status><span>Detected · needs review</span></label>
+              <label class="filter-option"><input type="checkbox" value="undetected" data-library-status><span>Not detected</span></label>
+              <label class="filter-option"><input type="checkbox" value="missing" data-library-status><span>File missing</span></label>
+            </div>
+            <div class="filter-popover-footer">
+              <button class="btn small" id="library-filter-reset" type="button">Clear filters</button>
+              <button class="btn danger hidden" id="btn-purge-missing" type="button"><span class="btn-label"></span></button>
+            </div>
+          </div>
+        </details>
+        <label class="toolbar-select">
+          <span>Sort:</span>
+          <select id="library-sort" aria-label="Sort releases">
+            <option value="newest">Newest</option>
+            <option value="title">Title</option>
+            <option value="tracks">Track count</option>
+            <option value="program">Program</option>
+          </select>
+        </label>
+      </div>
+      <div class="toolbar-group toolbar-actions" role="group" aria-label="Library actions">
+        <button class="btn" id="btn-scan" type="button">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M13 5V2l-2 2A5 5 0 1 0 13 8"/></svg>
+          <span class="btn-label">Rescan Folder</span>
+        </button>
+        <button class="btn hidden" id="btn-auto-all" type="button">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 1 .7 2.3L11 4l-2.3.7L8 7l-.7-2.3L5 4l2.3-.7zM12 8l.5 1.5L14 10l-1.5.5L12 12l-.5-1.5L10 10l1.5-.5zM4.5 8.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z"/></svg>
+          <span class="btn-label">Auto-detect All</span>
+        </button>
+        <button class="btn primary" id="btn-extract-all" type="button">
+          <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 8h2m2-4v8m2-6v4m2-7v10m2-7v4m2-2h-1"/></svg>
+          <span class="btn-label">Prepare Voice Audio</span>
+        </button>
+      </div>
+    </div>
+    <div class="library-results-meta" aria-live="polite" aria-atomic="true">
+      <span id="library-result-count"><strong>0</strong> releases</span>
+      <span class="library-results-context" id="library-result-context"></span>
+    </div>
+    <div id="release-list"></div>
+    <div class="library-state hidden" id="library-empty" role="status" aria-live="polite" aria-atomic="true">
+      <div class="library-state-glyph" id="library-state-glyph" aria-hidden="true">↳</div>
+      <div class="library-state-copy">
+        <div class="library-state-title" id="library-state-title"></div>
+        <p id="library-state-description"></p>
+      </div>
+      <button class="btn" id="library-state-action" type="button"></button>
+    </div>
+  </section>
+
+  <!-- ============ RELEASE EDITOR ============ -->
+  <section id="view-release" class="hidden" aria-label="Release editor" aria-hidden="true">
+    <button class="backlink" type="button" onclick="showView('library', true)">&larr; back to library</button>
+    <div class="row release-meta">
+      <input type="text" id="rel-title" class="release-title-input" aria-label="Release title" maxlength="200">
+      <input type="text" id="rel-program" class="release-program-input" aria-label="Release program" maxlength="100" placeholder="Program (e.g. BodyPump)">
+      <button class="btn small" id="btn-save-rel" type="button">Save</button>
+      <button class="btn small" id="btn-vault-rel" type="button"></button>
+    </div>
+    <div class="curation-strip">
+      <div class="curation-copy">
+        <span class="curation-state" id="rel-curation-state"></span>
+        <span class="muted" id="rel-curation-help"></span>
+      </div>
+      <button class="btn small" id="btn-curate-rel" type="button"></button>
+    </div>
+    <div class="media-stage"><video id="rel-video" controls preload="metadata" aria-label="Release video preview"></video></div>
+    <div class="npbar hidden" id="rel-now" role="status" aria-live="polite">
+      <div class="playback-indicator" aria-hidden="true">▶</div>
+      <div class="playback-copy">
+        <div id="rel-now-title" class="playback-title"></div>
+        <div class="muted" id="rel-now-range"></div>
+        <div class="matched-song" id="rel-now-song"></div>
+      </div>
+    </div>
+    <div class="row transport-row">
+      <button class="btn small" id="rel-back10" type="button" title="Back 10 seconds">−10s</button>
+      <button class="btn small" id="rel-fwd10" type="button" title="Forward 10 seconds">+10s</button>
+      <button class="btn small" id="rel-pip" type="button" title="Picture-in-picture">⧉ PIP</button>
+    </div>
+    <div class="row marker-row">
+      <button class="btn small" id="btn-mark-start" type="button">⟟ Set start from playhead</button>
+      <button class="btn small" id="btn-mark-end" type="button">⟟ Set end from playhead</button>
+      <input type="text" id="new-track-name" class="new-track-input" aria-label="New track name" maxlength="200" placeholder="Track name (e.g. 04 – Squats)">
+      <span class="muted" id="pending-range" role="status" aria-live="polite" aria-label="Pending track range">–</span>
+      <button class="btn small primary" id="btn-add-track" type="button">Add track</button>
+      <button class="btn small" id="btn-auto-tracks" type="button" title="Import embedded chapter markers if the file has them, otherwise match the music folder's songs against the video's audio">Auto-detect tracks</button>
+    </div>
+    <p class="muted shortcut-hint">Shortcuts: I = set start · O = set end · Space = play/pause · ←/→ = seek 10s</p>
+    <table class="track-table">
+      <caption class="sr-only">Detected release tracks and curation status</caption>
+      <thead><tr><th>Detected track</th><th>Matched audio</th><th>Notes</th><th>Start</th><th>End</th><th>Length</th><th>Status</th><th></th></tr></thead>
+      <tbody id="track-rows"></tbody>
+    </table>
+    <details id="notes-studio" class="notes-studio">
+      <summary>Choreography notes <span id="notes-studio-status" class="status-chip">Checking…</span></summary>
+      <div class="notes-studio-body">
+        <div class="notes-studio-head">
+          <div class="notes-studio-source">
+            <strong id="notes-source-name">Looking for choreography PDF…</strong>
+            <span id="notes-source-meta">Automatic mappings use whole track page groups.</span>
+          </div>
+          <div class="notes-studio-actions">
+            <a class="btn small hidden" id="btn-notes-source" target="_blank" rel="noopener">Open source PDF</a>
+            <button class="btn small" id="btn-notes-browse" type="button" disabled>Browse all pages</button>
+            <button class="btn small" id="btn-notes-issues" type="button" aria-pressed="false">Review issues</button>
+            <button class="btn small" id="btn-notes-rescan" type="button">Rescan notes</button>
+          </div>
+        </div>
+        <div id="notes-review-banner" class="notes-review-banner hidden" role="status"></div>
+        <div class="notes-studio-grid">
+          <div id="notes-mapping-list" class="notes-mapping-list"><div class="notes-loading">Checking page mappings…</div></div>
+          <aside id="notes-preview" class="notes-preview" aria-label="Choreography page preview">
+            <div id="notes-preview-empty" class="notes-preview-empty">Choose Preview beside a mapped track.</div>
+            <div id="notes-preview-content" class="hidden">
+              <img id="notes-preview-image" alt="Choreography note page preview">
+              <div class="notes-preview-tools">
+                <button class="btn small" id="notes-preview-prev" type="button" aria-label="Previous source page">←</button>
+                <span id="notes-preview-label" class="notes-preview-label"></span>
+                <button class="btn small" id="notes-preview-next" type="button" aria-label="Next source page">→</button>
+              </div>
+              <div class="notes-preview-jump">
+                <label for="notes-preview-page">Jump to page</label>
+                <input id="notes-preview-page" type="number" min="1" inputmode="numeric">
+                <button class="btn small" id="notes-preview-go" type="button">Go</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </details>
+    <details id="rejected-section" class="hidden rejected-section">
+      <summary>Rejected segments <span class="pill" id="rejected-count"></span></summary>
+      <div id="rejected-list"></div>
+    </details>
+    <div id="music-section" class="hidden music-section">
+      <h2>Music</h2>
+      <audio id="music-player" controls class="hidden full-audio"></audio>
+      <div id="music-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ MIXES ============ -->
+  <section id="view-mixes" class="hidden" aria-labelledby="mixes-heading" aria-hidden="true">
+    <div class="row section-header">
+      <h2 id="mixes-heading">Mixes</h2>
+      <span class="row section-tools" role="group" aria-label="Mix controls">
+        <span class="viewtoggle row" role="group" aria-label="Mix view">
+          <button class="btn small" data-vm="list" type="button" aria-label="List view" title="List view">
+            <svg class="toolbar-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 3h2v2H2zm4 0h8v2H6zM2 7h2v2H2zm4 0h8v2H6zM2 11h2v2H2zm4 0h8v2H6z"/></svg>
+          </button>
+          <button class="btn small" data-vm="grid" type="button" aria-label="Grid view" title="Grid view">
+            <svg class="toolbar-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+          </button>
+        </span>
+        <input type="text" id="mixes-filter" aria-label="Filter mixes" maxlength="200" placeholder="Filter mixes…">
+      </span>
+    </div>
+    <div class="manual-mix-panel">
+      <div>
+        <span class="manual-mix-kicker">Your tracks · your order</span>
+        <h3>Build your own mix</h3>
+        <p>Create an empty mix, then pick tracks from your releases and arrange them yourself. Automatic generation is optional.</p>
+      </div>
+      <div class="manual-mix-form">
+        <label class="manual-mix-field" for="new-mix-name">
+          <span class="field-label">New mix name</span>
+          <input type="text" id="new-mix-name" maxlength="200" placeholder="Example: Saturday strength">
+        </label>
+        <button class="btn primary" id="btn-create-mix" type="button"><span class="btn-label">Create empty mix</span></button>
+      </div>
+    </div>
+    <div class="generator-panel">
+      <div class="generator-heading">
+        <div>
+          <h3>Generate automatically</h3>
+          <p>Prefer a ready-made mix? Let MixMill select and order marked tracks.</p>
+        </div>
+        <button class="btn small" id="btn-clear-generator" type="button">Clear all</button>
+      </div>
+      <div class="generator-row">
+        <label class="generator-field">
+          <span class="field-label">Source pool</span>
+          <select id="gen-source-pool" aria-describedby="gen-pool-help">
+            <option value="curated">Curated</option>
+            <option value="discovery">Discovery</option>
+          </select>
+        </label>
+        <label class="generator-field">
+          <span class="field-label">Selection</span>
+          <select id="gen-mode">
+            <option value="program">One program</option>
+            <option value="any">Across programs</option>
+          </select>
+        </label>
+        <label class="generator-field" id="gen-program-field">
+          <span class="field-label">Program</span>
+          <select id="gen-program"></select>
+        </label>
+        <label class="generator-field">
+          <span class="field-label">Target minutes</span>
+          <input type="text" id="gen-minutes" value="60" maxlength="3" inputmode="numeric">
+        </label>
+        <button class="btn primary" id="btn-generate" type="button"><span class="btn-label">⚡ Generate mix</span></button>
+      </div>
+      <p class="pool-help" id="gen-pool-help"></p>
+      <div id="gen-programs-field" class="generator-programs-field hidden">
+        <span class="field-label" id="gen-programs-label">Programs to include · none means all</span>
+        <span id="gen-programs" class="row program-options" role="group" aria-labelledby="gen-programs-label"></span>
+      </div>
+      <details class="generator-advanced">
+        <summary><span>Advanced filters</span><span class="filter-count" id="gen-filter-count">0 active</span></summary>
+        <div class="advanced-grid">
+          <label class="generator-field wide">
+            <span class="field-label">Custom mix name</span>
+            <input type="text" id="gen-name" placeholder="Leave blank for automatic name" maxlength="120">
+          </label>
+          <label class="generator-field">
+            <span class="field-label">Slot range</span>
+            <span class="range-fields">
+              <input type="text" id="gen-slot-min" aria-label="Minimum slot" maxlength="3" placeholder="Min" inputmode="numeric">
+              <input type="text" id="gen-slot-max" aria-label="Maximum slot" maxlength="3" placeholder="Max" inputmode="numeric">
+            </span>
+          </label>
+          <label class="generator-field">
+            <span class="field-label">Release number range</span>
+            <span class="range-fields">
+              <input type="text" id="gen-rel-min" aria-label="Minimum release number" maxlength="5" placeholder="Min" inputmode="numeric">
+              <input type="text" id="gen-rel-max" aria-label="Maximum release number" maxlength="5" placeholder="Max" inputmode="numeric">
+            </span>
+          </label>
+          <label class="generator-field wide">
+            <span class="field-label">Required slots</span>
+            <input type="text" id="gen-required-slots" maxlength="400" placeholder="Example: 1, 10, 12" inputmode="numeric">
+            <span class="field-help">Always keep these slots, even when trimming to duration.</span>
+          </label>
+          <label class="generator-field wide">
+            <span class="field-label">Excluded slots</span>
+            <input type="text" id="gen-excluded-slots" maxlength="400" placeholder="Example: 4, 7" inputmode="numeric">
+            <span class="field-help">Never use these slot numbers.</span>
+          </label>
+          <div class="advanced-tuning wide">
+            <label class="generator-field">
+              <span class="field-label">Max tracks per release</span>
+              <input type="text" id="gen-max-per-release" maxlength="3" placeholder="Unlimited" inputmode="numeric">
+            </label>
+            <label class="generator-field">
+              <span class="field-label">Random seed</span>
+              <input type="text" id="gen-seed" maxlength="19" placeholder="Random" inputmode="numeric">
+              <span class="field-help">Reuse a seed to reproduce the same picks.</span>
+            </label>
+          </div>
+          <div class="advanced-toggles wide">
+            <label class="toggle-field">
+              <input type="checkbox" id="gen-include-rejected">
+              <span class="toggle-copy">
+                <span class="field-label">Include rejected segments</span>
+                <span class="field-help">Allow segments you removed during curation back into this generation.</span>
+              </span>
+            </label>
+            <label class="toggle-field">
+              <input type="checkbox" id="gen-include-vault">
+              <span class="toggle-copy">
+                <span class="field-label">Include Vault</span>
+                <span class="field-help">Temporarily use archived releases without returning them to the Library.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div id="mix-list"></div>
+  </section>
+
+  <!-- ============ MIX EDITOR ============ -->
+  <section id="view-mix" class="hidden" aria-labelledby="mix-title" aria-hidden="true">
+    <button class="backlink" type="button" onclick="showView('mixes', true)">&larr; back to mixes</button>
+    <div class="mix-header">
+      <span class="row mix-title-row">
+        <h2 id="mix-title" class="mix-title"></h2>
+        <button class="btn small" id="btn-rename-mix" type="button" aria-label="Rename mix" title="Rename mix">✎</button>
+      </span>
+      <div class="mix-toolbar" aria-label="Mix actions">
+        <div class="mix-action-group">
+          <span class="mix-action-label">Playback</span>
+          <div class="mix-action-buttons">
+            <button class="btn" id="btn-audio" type="button" title="For releases with a second, voice-free audio track: voice OFF plays and exports that track instead"></button>
+            <button class="btn" id="btn-play-music" type="button" title="Play this mix's matched songs (music files) back-to-back">♪ Play songs</button>
+            <button class="btn primary" id="btn-play-mix" type="button">▶ Play video</button>
+          </div>
+        </div>
+        <div class="mix-action-group downloads">
+          <span class="mix-action-label">Downloads</span>
+          <div class="mix-action-buttons">
+            <button class="btn primary" id="btn-package" type="button" title="Create a frame-accurate video, then download it with study notes and matched music in one zip"><span class="btn-label">⬇ Complete package</span></button>
+            <a class="btn" id="btn-songs-zip" title="Download this mix's matched songs as a zip">⬇ Songs zip</a>
+            <button class="btn" id="btn-choreo-notes" type="button" disabled title="Checking release folders for matching choreography notes">Notes checking…</button>
+            <button class="btn" id="btn-export-fast" type="button" title="Instant, lossless; each segment starts at the keyframe before your mark (sometimes several seconds early) and runs through your marked end">MP4 fast</button>
+            <button class="btn" id="btn-export-precise" type="button" title="Re-encodes for frame-exact cuts; slower">MP4 precise</button>
+          </div>
+        </div>
+        <div class="mix-action-group">
+          <span class="mix-action-label">Arrange</span>
+          <div class="mix-action-buttons">
+            <button class="btn" id="btn-shuffle" type="button" title="Randomize track order">⇅ Shuffle</button>
+            <button class="btn" id="btn-slotorder" type="button" title="Sort by track number (1 → N)"># Slot order</button>
+          </div>
+        </div>
+        <div class="mix-action-group">
+          <span class="mix-action-label">Manage</span>
+          <div class="mix-action-buttons">
+            <button class="btn" id="btn-duplicate-mix" type="button" title="Copy this mix">⧉ Duplicate</button>
+            <button class="btn danger" id="btn-delete-mix" type="button">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="muted" id="mix-summary"></p>
+    <div class="npbar hidden now-playing-banner" id="mix-song-now" role="status" aria-live="polite">
+      <div class="playback-indicator" aria-hidden="true">♪</div>
+      <div class="playback-copy">
+        <div id="mix-song-title" class="playback-title"></div>
+        <div class="muted" id="mix-song-sub"></div>
+      </div>
+    </div>
+    <audio id="mix-audio" controls class="hidden full-audio"></audio>
+    <div id="seg-preview" class="hidden preview-panel">
+      <div class="npbar preview-banner">
+        <div class="playback-indicator" aria-hidden="true">▶</div>
+        <div class="playback-copy">
+          <div id="seg-preview-title" class="playback-title"></div>
+          <div class="muted" id="seg-preview-sub"></div>
+          <div class="matched-song" id="seg-preview-song"></div>
+        </div>
+      </div>
+      <video id="seg-video" class="preview-video" controls></video>
+      <button class="btn small preview-close" id="seg-close" type="button">✕ close preview</button>
+    </div>
+    <div class="cols">
+      <div>
+        <h2>Tracks in this mix</h2>
+        <div id="seg-slot-items"></div>
+        <div id="mix-items"></div>
+        <p class="muted" id="mix-empty">Nothing yet — add tracks from the right.</p>
+      </div>
+      <div>
+        <h2>Pick from your releases</h2>
+        <input type="text" id="picker-filter" class="picker-filter" aria-label="Filter available tracks" maxlength="200" placeholder="Filter tracks…">
+        <div id="seg-slot-picker"></div>
+        <div id="mix-picker"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAYER ============ -->
+  <section id="view-player" class="hidden" aria-label="Mix player" aria-hidden="true">
+    <button class="backlink" type="button" id="player-back">&larr; back to mix</button>
+    <video id="mix-video" controls autoplay aria-label="Workout mix video player"></video>
+    <audio id="voice-audio" class="hidden"></audio>
+    <div class="npbar player-controls">
+      <button class="btn small" id="btn-prev" type="button" aria-label="Previous segment" title="Previous segment">⏮</button>
+      <button class="btn small" id="btn-back10" type="button" title="Back 10 seconds">−10s</button>
+      <button class="btn small" id="btn-fwd10" type="button" title="Forward 10 seconds">+10s</button>
+      <button class="btn small" id="btn-next" type="button" aria-label="Next segment" title="Next segment">⏭</button>
+      <button class="btn small" id="btn-pip" type="button" title="Picture-in-picture">⧉ PIP</button>
+      <div class="player-copy">
+        <div id="np-title" class="player-title"></div>
+        <div class="muted" id="np-sub"></div>
+      </div>
+      <div class="muted player-count" id="np-count"></div>
+      <span class="pill hidden player-badge" id="voice-badge" role="status" aria-live="polite"></span>
+    </div>
+    <div id="np-list" class="playlist"></div>
+  </section>
+
+  <!-- ============ VAULT ============ -->
+  <section id="view-vault" class="hidden" aria-labelledby="vault-heading" aria-hidden="true">
+    <h2 id="vault-heading">Vault</h2>
+    <p class="muted">Releases parked for later — hidden from the library, the mix picker and the generator. Existing mixes that use them keep working.</p>
+    <div id="vault-list"></div>
+    <p class="muted hidden" id="vault-empty">Vault is empty.</p>
+  </section>
+
+  <!-- ============ EXPORTS ============ -->
+  <section id="view-exports" class="hidden" aria-labelledby="exports-heading" aria-hidden="true">
+    <h2 id="exports-heading">Exports</h2>
+    <p class="muted">Finished files stay cached in MixMill. Click <strong>Download</strong> and choose a destination in the Windows Save As dialog; it opens in Downloads by default.</p>
+    <div id="export-list"></div>
+    <p class="muted">Fast exports are lossless stream copies — a segment starts at the nearest keyframe at or before your mark, which on some files is several seconds early, and runs through your marked end. Precise exports re-encode (1080p/30fps) for frame-exact cuts.</p>
+  </section>
+
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const themePreference = window.matchMedia("(prefers-color-scheme: light)");
+function activeTheme() {
+  return document.documentElement.dataset.theme || (themePreference.matches ? "light" : "dark");
+}
+function updateThemeControl() {
+  const theme = activeTheme();
+  const nextTheme = theme === "light" ? "dark" : "light";
+  const label = $("theme-toggle-label");
+  const button = $("theme-toggle");
+  label.textContent = nextTheme === "light" ? "Light" : "Dark";
+  button.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
+  button.title = `Switch to ${nextTheme} mode`;
+  $("theme-color").content = theme === "light" ? "#f3f6f1" : "#0b0d0b";
+}
+$("theme-toggle").addEventListener("click", () => {
+  const nextTheme = activeTheme() === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = nextTheme;
+  try { localStorage.setItem("mixmill-theme", nextTheme); } catch {}
+  updateThemeControl();
+});
+themePreference.addEventListener("change", () => {
+  if (!document.documentElement.dataset.theme) updateThemeControl();
+});
+updateThemeControl();
+const api = async (path, opts = {}) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  const { body, headers, ...fetchOpts } = opts;
+  let res;
+  try {
+    res = await fetch(path, {
+      ...fetchOpts,
+      headers: { "Content-Type": "application/json", "X-MixMill-Request": "1", ...headers },
+      signal: opts.signal || controller.signal,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("Request timed out — try again");
+    throw new Error("Couldn’t reach MixMill — check the server or reopen the desktop app");
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!res.ok) {
+    let msg = "";
+    try {
+      const detail = (await res.json()).detail;
+      if (typeof detail === "string") msg = detail;
+      else if (Array.isArray(detail)) msg = detail.map(item => {
+        const field = Array.isArray(item.loc) ? item.loc.filter(part => part !== "body").join(" → ") : "Input";
+        return `${field || "Input"}: ${item.msg || "invalid value"}`;
+      }).join(" · ");
+    } catch {}
+    if (!msg && res.status === 401) msg = "Authentication or desktop session ended — reload or reopen MixMill";
+    else if (!msg && res.status === 403) msg = "This action is not allowed in read-only mode";
+    else if (!msg && res.status === 409) msg = "Another operation is already running";
+    else if (!msg && res.status === 429) msg = "Too many requests — wait a moment and retry";
+    else if (!msg && res.status >= 500) msg = "MixMill hit a server error — try again";
+    if (!msg) msg = res.statusText || `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return res.json();
+};
+const fmt = (s) => {
+  s = Math.max(0, Math.round(s));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0");
+};
+const toast = (msg, { error = false } = {}) => {
+  const el = document.createElement("div");
+  el.className = `toast${error ? " error" : ""}`;
+  el.setAttribute("role", error ? "alert" : "status");
+  el.setAttribute("aria-live", error ? "assertive" : "polite");
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), error ? 5000 : 3000);
+};
+toast.error = (msg) => toast(msg, { error: true });
+function setButtonBusy(button, busy, busyLabel = "Working…") {
+  const label = button.querySelector(".btn-label");
+  if (busy) {
+    if (!button.dataset.idleLabel && label) button.dataset.idleLabel = label.textContent;
+    button.dataset.busy = "1";
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    if (label) label.textContent = busyLabel;
+    return;
+  }
+  delete button.dataset.busy;
+  button.disabled = false;
+  button.removeAttribute("aria-busy");
+  if (label && button.dataset.idleLabel) label.textContent = button.dataset.idleLabel;
+  delete button.dataset.idleLabel;
+}
+function debounce(fn, delay = 120) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+function renderCollectionFailure(containerId, title, description, retry) {
+  const container = $(containerId);
+  container.innerHTML = "";
+  const state = document.createElement("div");
+  state.className = "library-state error";
+  state.setAttribute("role", "alert");
+  state.innerHTML = `<div class="library-state-glyph" aria-hidden="true">!</div>
+    <div class="library-state-copy"><div class="library-state-title">${esc(title)}</div><p>${esc(description)}</p></div>`;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn";
+  button.textContent = "Try Again";
+  button.onclick = retry;
+  state.appendChild(button);
+  container.appendChild(state);
+}
+
+// ---------- view switching ----------
+let currentView = "library";
+function showView(name, moveFocus = false) {
+  stopPlayback();
+  document.querySelectorAll("main > section").forEach(section => {
+    section.classList.add("hidden");
+    section.setAttribute("aria-hidden", "true");
+  });
+  const section = $("view-" + name);
+  section.classList.remove("hidden");
+  section.removeAttribute("aria-hidden");
+  const navView = name === "release" ? "library" : ["mix", "player"].includes(name) ? "mixes" : name;
+  document.querySelectorAll("nav button").forEach(button => {
+    const active = button.dataset.view === navView;
+    button.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  currentView = name;
+  if (name === "release") updateReleasePlaybackUI();
+  if (name === "library") loadReleases();
+  if (name === "mixes") loadMixes();
+  if (name === "vault") loadVault();
+  if (name === "exports") loadExports();
+  if (moveFocus) requestAnimationFrame(() => {
+    const target = section.querySelector("h2, .backlink");
+    if (!target) return;
+    if (!target.matches("button, a, input, select, textarea, [tabindex]")) target.tabIndex = -1;
+    target.focus();
+  });
+}
+document.querySelectorAll("nav button").forEach(b =>
+  b.addEventListener("click", () => showView(b.dataset.view)));
+
+// ---------- view mode (list/grid) ----------
+let viewMode = localStorage.getItem("mixmill.view") || "grid";
+let preferMusicCovers = localStorage.getItem("mixmill.musicCovers") === "1";
+function setViewMode(m) {
+  viewMode = m;
+  localStorage.setItem("mixmill.view", m);
+  syncViewToggles();
+  if (currentView === "library") renderReleaseList();
+  if (currentView === "vault") renderVault();
+  if (currentView === "mixes") loadMixes();
+}
+function syncViewToggles() {
+  document.querySelectorAll(".viewtoggle .btn").forEach(b => {
+    const active = b.dataset.vm === viewMode;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", String(active));
+  });
+}
+document.querySelectorAll(".viewtoggle .btn").forEach(b =>
+  b.addEventListener("click", () => setViewMode(b.dataset.vm)));
+syncViewToggles();
+
+function syncCoverSource() {
+  $("library-cover-source").value = preferMusicCovers ? "music" : "video";
+}
+$("library-cover-source").onchange = (event) => {
+  preferMusicCovers = event.target.value === "music";
+  localStorage.setItem("mixmill.musicCovers", preferMusicCovers ? "1" : "0");
+  syncCoverSource();
+  if (currentView === "library") renderReleaseList();
+  if (currentView === "vault") renderVault();
+  if (currentView === "mixes") loadMixes();
+};
+syncCoverSource();
+
+const thumbnailObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const image = entry.target;
+        image.src = image.dataset.src;
+        delete image.dataset.src;
+        thumbnailObserver.unobserve(image);
+      }
+    }, { rootMargin: "480px 0px" })
+  : null;
+function observeThumbnail(image) {
+  if (!image?.dataset.src) return;
+  if (thumbnailObserver) thumbnailObserver.observe(image);
+  else {
+    image.src = image.dataset.src;
+    delete image.dataset.src;
+  }
+}
+function unobserveThumbnails(container) {
+  if (!thumbnailObserver) return;
+  container.querySelectorAll("img.thumb[data-src]").forEach(image => thumbnailObserver.unobserve(image));
+}
+function thumbHTML(releaseId, title, altText = `${title} cover`) {
+  if (releaseId == null) {
+    return `<div class="noimg" role="img" aria-label="${esc(altText)}">${esc(title.slice(0, 12))}</div>`;
+  }
+  const coverQuery = preferMusicCovers ? "?music_cover=1" : "";
+  return `<img class="thumb" loading="lazy" decoding="async" width="480" height="270" data-src="/api/releases/${releaseId}/thumb${coverQuery}" alt="${esc(altText)}">`;
+}
+function gcard(thumbHtml, title, meta, onOpen) {
+  const article = document.createElement("article");
+  article.className = "gcard";
+  const main = document.createElement("button");
+  main.className = "gcard-main";
+  main.type = "button";
+  main.setAttribute("aria-label", `Open ${title}`);
+  main.innerHTML = `<div class="gcard-media">${thumbHtml}</div><div class="gbody"><div class="gtitle">${esc(title)}</div><div class="gmeta"></div></div>`;
+  main.querySelector(".gmeta").textContent = meta;
+  main.onclick = onOpen;
+  const image = main.querySelector(".thumb");
+  if (image) {
+    image.addEventListener("error", () => {
+      const fallback = document.createElement("div");
+      fallback.className = "noimg";
+      fallback.setAttribute("role", "img");
+      fallback.setAttribute("aria-label", image.alt);
+      fallback.textContent = title.slice(0, 12);
+      image.replaceWith(fallback);
+    }, { once: true });
+    observeThumbnail(image);
+  }
+  article.appendChild(main);
+  return article;
+}
+
+// ---------- library ----------
+let releasesCache = [];
+function renderLibraryLoading() {
+  const list = $("release-list");
+  unobserveThumbnails(list);
+  list.className = "grid is-loading";
+  list.setAttribute("aria-busy", "true");
+  list.setAttribute("aria-label", "Loading releases");
+  list.innerHTML = Array.from({ length: 6 }, () => `
+    <article class="gcard skeleton-card" aria-hidden="true">
+      <div class="skeleton-block"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line title"></div>
+        <div class="skeleton-line meta"></div>
+        <div class="skeleton-line status"></div>
+      </div>
+    </article>`).join("");
+  $("library-empty").classList.add("hidden");
+  $("library-result-count").textContent = "Loading releases…";
+  $("library-result-context").textContent = "";
+}
+function setLibraryState({ title, description, actionLabel, action, error = false }) {
+  const state = $("library-empty");
+  state.classList.remove("hidden");
+  state.classList.toggle("error", error);
+  $("library-state-glyph").textContent = error ? "!" : "↳";
+  $("library-state-title").textContent = title;
+  $("library-state-description").textContent = description;
+  const button = $("library-state-action");
+  button.textContent = actionLabel || "";
+  button.classList.toggle("hidden", !actionLabel);
+  button.onclick = action || null;
+}
+function clearAllLibraryFilters() {
+  libraryState.query = "";
+  libraryState.program = "";
+  libraryState.statuses.clear();
+  localStorage.removeItem("mixmill.libraryProgram");
+  localStorage.removeItem("mixmill.libraryStatuses");
+  syncLibraryControls();
+  renderReleaseList();
+  $("library-filter").focus();
+}
+function renderLibraryEmptyState(view) {
+  if (view.sorted.length) {
+    $("library-empty").classList.add("hidden");
+    return;
+  }
+  const vaulted = releasesCache.filter(release => release.vaulted).length;
+  if (!view.base.length && vaulted) {
+    setLibraryState({
+      title: "Library clear",
+      description: `All ${vaulted} release${vaulted === 1 ? " is" : "s are"} currently stored in Vault.`,
+      actionLabel: "Open Vault",
+      action: () => showView("vault", true),
+    });
+    return;
+  }
+  if (!view.base.length) {
+    setLibraryState({
+      title: "No releases yet",
+      description: "Add video files to the mounted folder, then scan it to build your library.",
+      actionLabel: "Rescan Folder",
+      action: () => $("btn-scan").click(),
+    });
+    return;
+  }
+  setLibraryState({
+    title: "No matching releases",
+    description: "Nothing matches the current program, search, and status filters.",
+    actionLabel: "Clear Filters",
+    action: clearAllLibraryFilters,
+  });
+}
+function renderLibraryFailure() {
+  const list = $("release-list");
+  list.innerHTML = "";
+  list.className = "";
+  list.removeAttribute("aria-busy");
+  list.removeAttribute("aria-label");
+  $("library-result-count").textContent = "Library unavailable";
+  $("library-result-context").textContent = "";
+  setLibraryState({
+    title: "Couldn’t load releases",
+    description: "MixMill could not reach the library service. Your media and saved work are unchanged.",
+    actionLabel: "Try Again",
+    action: () => loadReleases({ showLoading: true }),
+    error: true,
+  });
+}
+async function loadReleases({ showLoading = releasesCache.length === 0 } = {}) {
+  if (showLoading) renderLibraryLoading();
+  try {
+    releasesCache = await api("/api/releases");
+    syncLibraryPrograms();
+    syncLibraryDataControls(getLibraryReleases(releasesCache));
+    syncLibraryControls();
+    renderReleaseList();
+  } catch (error) {
+    if (!releasesCache.length) renderLibraryFailure();
+    else {
+      renderReleaseList();
+      toast.error("Couldn’t refresh the library — showing the last loaded releases");
+    }
+  }
+}
+const naturalKey = (s) => String(s || "").split(/(\d+)/).map(t => /^\d+$/.test(t) ? t.padStart(12, "0") : t.toLowerCase()).join("");
+async function loadVault() {
+  const list = $("vault-list");
+  list.setAttribute("aria-busy", "true");
+  try {
+    releasesCache = await api("/api/releases");
+    renderVault();
+  } catch (error) {
+    if (releasesCache.length) {
+      renderVault();
+      toast.error("Couldn’t refresh the Vault — showing the last loaded releases");
+    } else {
+      renderCollectionFailure(
+        "vault-list", "Couldn’t load the Vault",
+        "Saved releases are unchanged. Check the server, then retry.", loadVault
+      );
+      $("vault-empty").classList.add("hidden");
+    }
+  } finally {
+    list.removeAttribute("aria-busy");
+  }
+}
+function renderVault() {
+  const rels = releasesCache.filter(r => r.vaulted);
+  $("vault-empty").classList.toggle("hidden", rels.length > 0);
+  const list = $("vault-list");
+  unobserveThumbnails(list);
+  list.innerHTML = "";
+  list.className = viewMode === "grid" ? "grid" : "";
+  renderReleaseCards(list, rels, true);
+}
+// Renders `rels` into `container` honoring the current viewMode. Does NOT
+// clear `container` — callers clear (or hand in a fresh element), since the
+// program-grouped view in renderReleaseList reuses a <details> that already
+// has a <summary> appended before the card loop runs.
+// When isVault is true each card gets an "Unvault" button in place of the
+// usual click-through hint.
+function releaseStatusConfig(release) {
+  if (release.missing) return { key: "missing", className: "danger", icon: "⚠", label: "File missing" };
+  if (release.curated) return { key: "curated", className: "success", icon: "✓", label: "Curated" };
+  if (release.detected_count > 0) return { key: "detected", className: "detected", icon: "◐", label: "Detected · needs review" };
+  return { key: "undetected", className: "undetected", icon: "○", label: "Not detected" };
+}
+function renderReleaseCards(container, rels, isVault) {
+  const fragment = document.createDocumentFragment();
+  for (const r of rels) {
+    const makeUnvault = () => {
+      const un = document.createElement("button");
+      un.className = "btn small";
+      un.type = "button";
+      un.textContent = "Unvault";
+      un.onclick = async () => {
+        if (un.dataset.busy) return;
+        setButtonBusy(un, true, "Returning…");
+        try {
+          await api("/api/releases/" + r.id, { method: "PATCH", body: { vaulted: 0 } });
+          toast("Returned to library");
+          await loadVault();
+        } catch (error) {
+          toast.error(error.message);
+        } finally {
+          if (un.isConnected) setButtonBusy(un, false);
+        }
+      };
+      return un;
+    };
+    if (viewMode === "grid") {
+      const status = releaseStatusConfig(r);
+      const card = gcard(
+        thumbHTML(r.id, r.title, `${r.title} release cover`),
+        r.title,
+        "",
+        () => openRelease(r.id)
+      );
+      card.classList.add("release-card", status.key);
+      const main = card.querySelector(".gcard-main");
+      main.title = `${r.title}: ${status.label.toLowerCase()}`;
+      const meta = card.querySelector(".gmeta");
+      meta.innerHTML = `<svg class="gmeta-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 4.5V8l2.5 1.5"/></svg><span>${fmt(r.duration)}</span><span class="meta-separator">·</span><span>${r.track_count} kept</span>`;
+      const statusChip = document.createElement("div");
+      statusChip.className = `status-chip release-status ${status.className}`;
+      statusChip.textContent = `${status.icon} ${status.label}`;
+      card.querySelector(".gbody").appendChild(statusChip);
+      if (status.key === "curated") {
+        const badge = document.createElement("span");
+        badge.className = "curated-badge";
+        badge.setAttribute("aria-hidden", "true");
+        badge.textContent = "✓";
+        card.querySelector(".gcard-media").appendChild(badge);
+      }
+      if (isVault) {
+        const footer = document.createElement("div");
+        footer.className = "gcard-footer";
+        footer.appendChild(makeUnvault());
+        card.appendChild(footer);
+      }
+      fragment.appendChild(card);
+    } else {
+      const status = releaseStatusConfig(r);
+      const article = document.createElement("article");
+      article.className = `card release-list-card ${status.key}`;
+      const main = document.createElement("button");
+      main.className = "release-list-main";
+      main.type = "button";
+      main.setAttribute("aria-label", `Open ${r.title}`);
+      main.innerHTML = `<div class="release-list-copy"><div class="release-list-title">${esc(r.title)}</div><div class="meta">${fmt(r.duration)} · ${r.track_count} kept${r.rejected_count ? ` · ${r.rejected_count} rejected` : ""}</div><div class="status-chip release-status ${status.className}">${status.icon} ${status.label}</div></div><div class="muted">edit →</div>`;
+      main.onclick = () => openRelease(r.id);
+      article.appendChild(main);
+      if (isVault) article.appendChild(makeUnvault());
+      fragment.appendChild(article);
+    }
+  }
+  container.appendChild(fragment);
+}
+const openPrograms = new Set();
+const allowedLibraryStatuses = new Set(["curated", "detected", "undetected", "missing"]);
+const allowedLibrarySorts = new Set(["newest", "title", "tracks", "program"]);
+let savedLibraryStatuses = [];
+try {
+  const parsed = JSON.parse(localStorage.getItem("mixmill.libraryStatuses") || "[]");
+  savedLibraryStatuses = Array.isArray(parsed)
+    ? parsed.filter(status => allowedLibraryStatuses.has(status))
+    : [];
+} catch { savedLibraryStatuses = []; }
+const savedLibrarySort = localStorage.getItem("mixmill.librarySort");
+const libraryState = {
+  query: "",
+  program: localStorage.getItem("mixmill.libraryProgram") || "",
+  statuses: new Set(savedLibraryStatuses),
+  sort: allowedLibrarySorts.has(savedLibrarySort) ? savedLibrarySort : "newest",
+};
+
+function getLibraryReleases(releases) {
+  return releases.filter(release => !release.vaulted);
+}
+
+function getAvailablePrograms(releases) {
+  return [...new Set(releases
+    .map(release => (release.program || "").trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+}
+
+function libraryProgramName(program) {
+  return program === "__other__" ? "Other" : program;
+}
+
+function matchesLibraryProgram(release, program) {
+  if (!program) return true;
+  const releaseProgram = (release.program || "").trim();
+  return program === "__other__" ? !releaseProgram : releaseProgram === program;
+}
+
+function libraryStatus(release) {
+  if (release.missing) return "missing";
+  if (release.curated) return "curated";
+  if (release.detected_count > 0) return "detected";
+  return "undetected";
+}
+
+function matchesLibraryFilters(release, state) {
+  const query = state.query.trim().toLowerCase();
+  const queryMatches = !query ||
+    release.title.toLowerCase().includes(query) ||
+    (release.program || "").toLowerCase().includes(query);
+  const statusMatches = state.statuses.size === 0 || state.statuses.has(libraryStatus(release));
+  return queryMatches && statusMatches;
+}
+
+function sortLibraryReleases(releases, sort) {
+  const sorted = [...releases];
+  const byTitle = (a, b) => naturalKey(a.title).localeCompare(naturalKey(b.title));
+  if (sort === "title") sorted.sort(byTitle);
+  if (sort === "newest") sorted.sort((a, b) => (b.added_at || 0) - (a.added_at || 0) || byTitle(a, b));
+  if (sort === "tracks") sorted.sort((a, b) => b.track_count - a.track_count || byTitle(a, b));
+  if (sort === "program") sorted.sort((a, b) =>
+    naturalKey(a.program || "Other").localeCompare(naturalKey(b.program || "Other")) || byTitle(a, b));
+  return sorted;
+}
+
+function getProgramStats(releases) {
+  return {
+    total: releases.length,
+    curated: releases.filter(release => !!release.curated).length,
+    needsReview: releases.filter(release =>
+      !release.missing && !release.curated && release.detected_count > 0).length,
+  };
+}
+
+function getLibraryView(releases, state) {
+  const base = getLibraryReleases(releases);
+  const scoped = base.filter(release => matchesLibraryProgram(release, state.program));
+  const filtered = scoped.filter(release => matchesLibraryFilters(release, state));
+  return {
+    base,
+    scoped,
+    filtered,
+    sorted: sortLibraryReleases(filtered, state.sort),
+  };
+}
+
+function syncLibraryPrograms() {
+  const select = $("library-program");
+  const releases = getLibraryReleases(releasesCache);
+  const programs = getAvailablePrograms(releases);
+  const hasOther = releases.some(release => !(release.program || "").trim());
+  select.replaceChildren(new Option("All programs", ""));
+  for (const program of programs) select.add(new Option(program, program));
+  if (hasOther) select.add(new Option("Other", "__other__"));
+  const available = [...select.options].some(option => option.value === libraryState.program);
+  if (!available) {
+    libraryState.program = "";
+    localStorage.removeItem("mixmill.libraryProgram");
+  }
+  select.value = libraryState.program;
+}
+
+function syncLibraryControls() {
+  $("library-filter").value = libraryState.query;
+  $("library-sort").value = libraryState.sort;
+  if ([...$("library-program").options].some(option => option.value === libraryState.program)) {
+    $("library-program").value = libraryState.program;
+  }
+  document.querySelectorAll("[data-library-status]").forEach(input => {
+    input.checked = libraryState.statuses.has(input.value);
+  });
+  const count = libraryState.statuses.size;
+  const badge = $("library-filter-count");
+  badge.textContent = count;
+  badge.classList.toggle("hidden", count === 0);
+  $("library-filter-clear").classList.toggle("hidden", !libraryState.query);
+}
+
+function syncLibraryDataControls(releases) {
+  const missing = releases.filter(release => release.missing).length;
+  const purge = $("btn-purge-missing");
+  purge.classList.toggle("hidden", missing === 0);
+  if (!purge.dataset.busy) purge.querySelector(".btn-label").textContent = `Remove missing (${missing})`;
+  const undetected = releases.filter(release => !release.missing && release.detected_count === 0).length;
+  const autoAll = $("btn-auto-all");
+  autoAll.classList.toggle("hidden", undetected === 0);
+  if (!autoAll.dataset.busy) autoAll.querySelector(".btn-label").textContent = `Auto-detect All (${undetected})`;
+}
+
+function renderLibraryResultMeta(view) {
+  const shown = view.filtered.length;
+  const available = view.scoped.length;
+  $("library-result-count").innerHTML = shown === available
+    ? `<strong>${shown}</strong> release${shown === 1 ? "" : "s"}`
+    : `Showing <strong>${shown}</strong> of ${available} releases`;
+  const context = [];
+  if (libraryState.program) context.push(libraryProgramName(libraryState.program));
+  if (libraryState.query) context.push(`Search: “${libraryState.query}”`);
+  if (libraryState.statuses.size) {
+    context.push(`${libraryState.statuses.size} status filter${libraryState.statuses.size === 1 ? "" : "s"}`);
+  }
+  $("library-result-context").textContent = context.join(" · ");
+}
+
+document.querySelectorAll("[data-library-status]").forEach(input => {
+  input.onchange = () => {
+    input.checked ? libraryState.statuses.add(input.value) : libraryState.statuses.delete(input.value);
+    localStorage.setItem("mixmill.libraryStatuses", JSON.stringify([...libraryState.statuses]));
+    syncLibraryControls();
+    renderReleaseList();
+  };
+});
+$("library-filter-reset").onclick = () => {
+  libraryState.statuses.clear();
+  localStorage.removeItem("mixmill.libraryStatuses");
+  syncLibraryControls();
+  renderReleaseList();
+};
+$("library-filter-clear").onclick = () => {
+  libraryState.query = "";
+  syncLibraryControls();
+  renderReleaseList();
+  $("library-filter").focus();
+};
+$("library-program").onchange = () => {
+  libraryState.program = $("library-program").value;
+  if (libraryState.program) localStorage.setItem("mixmill.libraryProgram", libraryState.program);
+  else localStorage.removeItem("mixmill.libraryProgram");
+  renderReleaseList();
+};
+document.addEventListener("click", event => {
+  const menu = $("library-filter-menu");
+  if (menu.open && !menu.contains(event.target)) menu.open = false;
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") $("library-filter-menu").open = false;
+});
+syncLibraryControls();
+
+function renderProgramSummary(rels, program = "") {
+  const programs = new Set(rels.map(r => (r.program || "").trim()).filter(Boolean));
+  const stats = getProgramStats(rels);
+  const scopeName = program || "All programs";
+  const initials = program
+    ? program.split(/\s+/).filter(Boolean).map(word => word[0]).join("").slice(0, 3).toUpperCase()
+    : "ALL";
+  $("program-summary-mark").textContent = initials;
+  $("program-summary-scope").textContent = program
+    ? "Selected program"
+    : `${programs.size} program${programs.size === 1 ? "" : "s"}`;
+  $("program-summary-name").textContent = scopeName;
+  $("program-summary-total").textContent = stats.total;
+  $("program-summary-curated").textContent = stats.curated;
+  $("program-summary-review").textContent = stats.needsReview;
+  $("library-program-summary").setAttribute(
+    "aria-label",
+    `${scopeName}: ${stats.total} releases, ${stats.curated} curated, ${stats.needsReview} need review`
+  );
+}
+const LIBRARY_BATCH_SIZE = 60;
+let libraryLoadObserver = null;
+function stopLibraryLoadObserver() {
+  if (libraryLoadObserver) libraryLoadObserver.disconnect();
+  libraryLoadObserver = null;
+}
+function appendReleaseBatch(list, releases, start = 0) {
+  const end = Math.min(start + LIBRARY_BATCH_SIZE, releases.length);
+  const controls = list.querySelector(":scope > .library-load-more");
+  const fragment = document.createDocumentFragment();
+  renderReleaseCards(fragment, releases.slice(start, end), false);
+  list.insertBefore(fragment, controls);
+  if (end >= releases.length) {
+    controls?.remove();
+    stopLibraryLoadObserver();
+    return;
+  }
+  const loadMore = controls || document.createElement("div");
+  loadMore.className = "library-load-more";
+  loadMore.setAttribute("role", "status");
+  loadMore.setAttribute("aria-live", "polite");
+  let button = loadMore.querySelector("button");
+  if (!button) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn";
+    button.setAttribute("aria-controls", "release-list");
+    loadMore.appendChild(button);
+    list.appendChild(loadMore);
+  }
+  delete button.dataset.busy;
+  const nextCount = Math.min(LIBRARY_BATCH_SIZE, releases.length - end);
+  button.textContent = `Show ${nextCount} more · ${end} of ${releases.length}`;
+  button.onclick = () => {
+    if (button.dataset.busy) return;
+    button.dataset.busy = "1";
+    stopLibraryLoadObserver();
+    appendReleaseBatch(list, releases, end);
+  };
+  if ("IntersectionObserver" in window) {
+    libraryLoadObserver = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) button.click();
+    }, { rootMargin: "400px 0px" });
+    requestAnimationFrame(() => libraryLoadObserver?.observe(button));
+  }
+}
+function renderReleaseList() {
+  const list = $("release-list");
+  stopLibraryLoadObserver();
+  unobserveThumbnails(list);
+  list.innerHTML = "";
+  list.className = "";
+  list.removeAttribute("aria-busy");
+  list.removeAttribute("aria-label");
+  const view = getLibraryView(releasesCache, libraryState);
+  renderProgramSummary(view.scoped, libraryProgramName(libraryState.program));
+  renderLibraryResultMeta(view);
+  renderLibraryEmptyState(view);
+  $("btn-auto-all").title = libraryState.program
+    ? "Runs across every program, not only the selected program"
+    : "Detect every release without tracks";
+  if (libraryState.sort === "program" && !libraryState.program && !libraryState.query.trim()) {
+    const groups = new Map();
+    for (const r of view.sorted) {
+      const key = r.program || "Other";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    }
+    for (const [program, prels] of groups) {
+      const det = document.createElement("details");
+      det.open = !!libraryState.query.trim() || openPrograms.has(program);
+      const holder = document.createElement("div");
+      if (viewMode === "grid") holder.className = "grid";
+      let rendered = false;
+      const ensureRendered = () => {
+        if (rendered) return;
+        renderReleaseCards(holder, prels, false);
+        rendered = true;
+      };
+      det.addEventListener("toggle", () => {
+        if (det.open) ensureRendered();
+        if (libraryState.query.trim()) return; // search forces groups open; don't record that as a choice
+        det.open ? openPrograms.add(program) : openPrograms.delete(program);
+      });
+      const reviewed = prels.filter(r => r.curated).length;
+      const sum = document.createElement("summary");
+      sum.innerHTML = `${esc(program)} <span class="pill">${prels.length}</span>` +
+        (reviewed ? ` <span class="pill success">${reviewed} curated</span>` : "");
+      det.appendChild(sum);
+      det.appendChild(holder);
+      if (det.open) ensureRendered();
+      list.appendChild(det);
+    }
+  } else {
+    if (viewMode === "grid") list.className = "grid";
+    appendReleaseBatch(list, view.sorted);
+  }
+}
+const renderLibraryFromSearch = debounce(renderReleaseList);
+$("library-filter").oninput = event => {
+  libraryState.query = event.target.value;
+  $("library-filter-clear").classList.toggle("hidden", !libraryState.query);
+  renderLibraryFromSearch();
+};
+$("library-sort").onchange = () => {
+  libraryState.sort = $("library-sort").value;
+  localStorage.setItem("mixmill.librarySort", libraryState.sort);
+  renderReleaseList();
+};
+$("btn-scan").onclick = async () => {
+  const btn = $("btn-scan");
+  if (btn.dataset.busy) return;
+  setButtonBusy(btn, true, "Scanning…");
+  try {
+    const res = await api("/api/scan", { method: "POST" });
+    toast(`Scan done — ${res.found} file(s) found, ${res.added} new`);
+    await loadReleases();
+  } catch (error) {
+    toast.error(`Scan failed: ${error.message}`);
+  } finally {
+    setButtonBusy(btn, false);
+  }
+};
+$("btn-purge-missing").onclick = async () => {
+  const missing = releasesCache.filter(r => r.missing).length;
+  if (!confirm(`Remove ${missing} missing release(s)?\nTheir marked tracks are deleted too, and any mix using them shrinks. If the video folder just failed to mount, fix the mount and Rescan instead.`)) return;
+  const btn = $("btn-purge-missing");
+  if (btn.dataset.busy) return;
+  setButtonBusy(btn, true, "Removing…");
+  try {
+    const res = await api("/api/releases/missing?confirm=true", { method: "DELETE" });
+    toast(`Removed ${res.deleted} missing release(s)`);
+    await loadReleases();
+  } catch (error) {
+    toast.error(`Remove failed: ${error.message}`);
+  } finally {
+    setButtonBusy(btn, false);
+  }
+};
+$("btn-auto-all").onclick = async () => {
+  const btn = $("btn-auto-all");
+  const label = btn.querySelector(".btn-label");
+  if (btn.dataset.busy) return;
+  setButtonBusy(btn, true, "Starting detection…");
+  let job_id;
+  try {
+    ({ job_id } = await api("/api/auto-tracks-all", { method: "POST" }));
+  } catch (e) {
+    setButtonBusy(btn, false);
+    renderReleaseList();
+    return toast.error(e.message);
+  }
+  const timer = setInterval(async () => {
+    let j;
+    try { j = await api("/api/jobs/" + job_id); }
+    catch {
+      clearInterval(timer);
+      setButtonBusy(btn, false);
+      return toast.error("Detection status unavailable — try again");
+    }
+    label.textContent = j.status === "running"
+      ? `Detecting ${Math.round(j.progress * 100)}% — ${j.detail}` : "Queued…";
+    if (j.status === "done" || j.status === "error") {
+      clearInterval(timer);
+      setButtonBusy(btn, false);
+      if (j.status === "error") toast.error(j.error);
+      else toast(`Done: ${j.result.imported} track(s) across ${j.result.releases} release(s)` +
+                 (j.result.failed.length ? ` · ${j.result.failed.length} failed` : ""));
+      loadReleases();
+    }
+  }, 1000);
+};
+$("btn-extract-all").onclick = async () => {
+  const btn = $("btn-extract-all");
+  const label = btn.querySelector(".btn-label");
+  if (btn.dataset.busy) return;
+  setButtonBusy(btn, true, "Starting audio…");
+  let job_id;
+  try {
+    ({ job_id } = await api("/api/extract-audio-all", { method: "POST" }));
+  } catch (e) {
+    setButtonBusy(btn, false);
+    return toast.error(e.message);
+  }
+  const timer = setInterval(async () => {
+    let j;
+    try { j = await api("/api/jobs/" + job_id); }
+    catch {
+      clearInterval(timer);
+      setButtonBusy(btn, false);
+      return toast.error("Audio preparation status unavailable — try again");
+    }
+    label.textContent = j.status === "running"
+      ? `Extracting ${Math.round(j.progress * 100)}% — ${j.detail}` : "Queued…";
+    if (j.status === "done" || j.status === "error") {
+      clearInterval(timer);
+      setButtonBusy(btn, false);
+      if (j.status === "error") toast.error(j.error);
+      else toast(`Voice audio: ${j.result.extracted} extracted, ${j.result.skipped} without a second track` +
+                 (j.result.failed.length ? `, ${j.result.failed.length} failed` : ""));
+    }
+  }, 1000);
+};
+
+// ---------- release editor ----------
+let rel = null, pendingStart = null, pendingEnd = null;
+let releaseNotesStatus = null, releaseNotesRequest = 0;
+let notesPreviewPages = [], notesPreviewIndex = 0, notesPreviewTrack = "", notesPreviewTrackId = null;
+let notesIssuesOnly = false;
+async function openRelease(id) {
+  stopPlayback();
+  let nextRelease;
+  try {
+    nextRelease = await api("/api/releases/" + id);
+  } catch (error) {
+    toast.error(`Couldn’t open release: ${error.message}`);
+    return;
+  }
+  rel = nextRelease;
+  notesIssuesOnly = false;
+  closeNotesPreview();
+  $("rel-title").value = rel.title;
+  $("rel-program").value = rel.program || "";
+  $("btn-vault-rel").textContent = rel.vaulted ? "Return from vault" : "Move to vault";
+  renderCurationState();
+  const v = $("rel-video");
+  v.src = "/api/stream/" + rel.id;
+  pendingStart = pendingEnd = null;
+  updatePendingLabel();
+  renderTracks();
+  loadMusic();
+  showView("release", true);
+}
+async function loadMusic() {
+  const wrap = $("music-list"), player = $("music-player");
+  player.pause();
+  player.removeAttribute("src");
+  player.classList.add("hidden");
+  wrap.innerHTML = "";
+  let files = [];
+  try { files = await api(`/api/releases/${rel.id}/music`); } catch {}
+  $("music-section").classList.toggle("hidden", !files.length);
+  for (const f of files) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "mixitem addtrack card-button";
+    row.setAttribute("aria-label", `Play ${f.name}`);
+    row.innerHTML = `<div class="grow"><div class="name">${esc(f.name)}</div></div><div>▶</div>`;
+    row.onclick = () => {
+      claimPlayback("music-player");
+      player.src = `/api/releases/${rel.id}/music/${f.index}`;
+      player.classList.remove("hidden");
+      player.play().catch(() => {});
+      wrap.querySelectorAll(".mixitem").forEach(el => el.classList.toggle("playing", el === row));
+    };
+    wrap.appendChild(row);
+  }
+}
+$("music-player").addEventListener("pause", () =>
+  document.querySelectorAll("#music-list .mixitem").forEach(el => el.classList.remove("playing")));
+function updatePendingLabel() {
+  $("pending-range").textContent =
+    (pendingStart != null ? fmt(pendingStart) : "–") + " → " + (pendingEnd != null ? fmt(pendingEnd) : "–");
+}
+$("btn-mark-start").onclick = () => { pendingStart = $("rel-video").currentTime; updatePendingLabel(); };
+$("btn-mark-end").onclick = () => { pendingEnd = $("rel-video").currentTime; updatePendingLabel(); };
+async function togglePip(video) {
+  try {
+    if (document.pictureInPictureElement) await document.exitPictureInPicture();
+    else await video.requestPictureInPicture();
+  } catch { toast("Picture-in-picture unavailable"); }
+}
+$("rel-back10").onclick = () => { const v = $("rel-video"); v.currentTime = Math.max(0, v.currentTime - 10); };
+$("rel-fwd10").onclick = () => { const v = $("rel-video"); v.currentTime = v.currentTime + 10; };
+$("rel-pip").onclick = () => togglePip($("rel-video"));
+$("btn-pip").onclick = () => togglePip($("mix-video"));
+if (!document.pictureInPictureEnabled) {
+  $("rel-pip").classList.add("hidden");
+  $("btn-pip").classList.add("hidden");
+}
+document.addEventListener("keydown", (e) => {
+  if (currentView !== "release") return;
+  if (e.target.matches("input, textarea")) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const v = $("rel-video");
+  if (e.key === "i" || e.key === "I") { pendingStart = v.currentTime; updatePendingLabel(); }
+  else if (e.key === "o" || e.key === "O") { pendingEnd = v.currentTime; updatePendingLabel(); }
+  else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 10); e.preventDefault(); }
+  else if (e.key === "ArrowRight") { v.currentTime = v.currentTime + 10; e.preventDefault(); }
+  else if (e.code === "Space" && !e.target.closest("video, audio, button, a, summary, select, [role=button]")) {
+    e.preventDefault();
+    v.paused ? v.play().catch(() => {}) : v.pause();
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (currentView !== "player" || !mix) return;
+  if (e.target.matches("input, textarea, select")) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const v = $("mix-video"), it = mix.items[playIdx];
+  if (!it) return;
+  if (e.key === "ArrowLeft") { v.currentTime = Math.max(it.start, v.currentTime - 10); e.preventDefault(); }
+  else if (e.key === "ArrowRight") { v.currentTime = Math.min(it.end - 0.5, v.currentTime + 10); e.preventDefault(); }
+  else if (e.key === "ArrowUp" || e.key === "p" || e.key === "P") { if (playIdx > 0) { playIdx--; playSegment(); } e.preventDefault(); }
+  else if (e.key === "ArrowDown" || e.key === "n" || e.key === "N") { nextSegment(); e.preventDefault(); }
+  else if (e.code === "Space" && !e.target.closest("video, button, a, summary, [role=button]")) {
+    e.preventDefault();
+    v.paused ? v.play().catch(() => {}) : v.pause();
+  }
+});
+$("btn-add-track").onclick = async () => {
+  if (pendingStart == null || pendingEnd == null) return toast("Set start and end from the playhead first");
+  const name = $("new-track-name").value.trim() || `Track ${rel.tracks.length + 1}`;
+  try {
+    await api(`/api/releases/${rel.id}/tracks`, { method: "POST", body: { name, start: pendingStart, end: pendingEnd } });
+    $("new-track-name").value = ""; pendingStart = pendingEnd = null; updatePendingLabel();
+    rel = await api("/api/releases/" + rel.id);
+    renderTracks();
+    renderCurationState();
+  } catch (e) { return toast.error(e.message); }
+};
+$("btn-auto-tracks").onclick = async () => {
+  const btn = $("btn-auto-tracks");
+  btn.disabled = true;
+  try {
+    const { job_id } = await api(`/api/releases/${rel.id}/auto-tracks`, { method: "POST" });
+    const timer = setInterval(async () => {
+      let j;
+      try { j = await api("/api/jobs/" + job_id); }
+      catch { clearInterval(timer); btn.disabled = false; btn.textContent = "Auto-detect tracks"; return toast.error("Detection status unavailable — try again"); }
+      btn.textContent = j.status === "running"
+        ? `Detecting… ${Math.round(j.progress * 100)}%` : "Queued…";
+      if (j.status === "done" || j.status === "error") {
+        clearInterval(timer);
+        btn.disabled = false;
+        btn.textContent = "Auto-detect tracks";
+        if (j.status === "error") return toast.error(j.error);
+        const res = j.result;
+        const how = res.method === "chapters"
+          ? "from chapter markers"
+          : `by matching music (${res.matched} matched${res.guessed ? `, ${res.guessed} guessed` : ""})`;
+        toast(`Added ${res.imported} track(s) ${how}${res.skipped ? ` · ${res.skipped} duplicate(s) skipped` : ""}`);
+        rel = await api("/api/releases/" + rel.id);
+        renderTracks();
+        renderCurationState();
+      }
+    }, 1000);
+  } catch (e) { btn.disabled = false; toast.error(e.message); }
+};
+$("btn-save-rel").onclick = async () => {
+  const button = $("btn-save-rel");
+  if (button.dataset.busy) return;
+  setButtonBusy(button, true, "Saving…");
+  try {
+    rel = await api("/api/releases/" + rel.id, { method: "PATCH",
+      body: { title: $("rel-title").value, program: $("rel-program").value } });
+    toast("Saved");
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    setButtonBusy(button, false);
+  }
+};
+$("btn-vault-rel").onclick = async () => {
+  const button = $("btn-vault-rel");
+  if (button.dataset.busy) return;
+  setButtonBusy(button, true);
+  try {
+    rel = await api("/api/releases/" + rel.id, { method: "PATCH",
+      body: { vaulted: rel.vaulted ? 0 : 1 } });
+    button.textContent = rel.vaulted ? "Return from vault" : "Move to vault";
+    toast(rel.vaulted ? "Moved to vault" : "Returned to library");
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    setButtonBusy(button, false);
+  }
+};
+function renderCurationState() {
+  const state = $("rel-curation-state"), button = $("btn-curate-rel");
+  const kept = rel.tracks.length, rejected = rel.rejected_tracks.length;
+  state.classList.toggle("active", !!rel.curated);
+  if (rel.curated) {
+    state.textContent = "✓ Curated source";
+    $("rel-curation-help").textContent = `${kept} kept segment${kept === 1 ? "" : "s"}${rejected ? ` · ${rejected} rejected` : ""} · eligible for Curated mixes`;
+    button.textContent = "Return to Discovery";
+    button.disabled = false;
+  } else {
+    state.textContent = kept || rejected ? "◐ Discovery source" : "○ No segments detected";
+    $("rel-curation-help").textContent = kept
+      ? "Review boundaries, reject what you do not want, then mark this release Curated."
+      : "Auto-detect or add numbered tracks before curating this release.";
+    button.textContent = "Mark curated";
+    button.disabled = kept === 0;
+  }
+}
+$("btn-curate-rel").onclick = async () => {
+  try {
+    rel = await api("/api/releases/" + rel.id, {
+      method: "PATCH", body: { curated: rel.curated ? 0 : 1 }
+    });
+    renderCurationState();
+    toast(rel.curated ? "Release marked Curated" : "Release returned to Discovery");
+  } catch (e) { toast.error(e.message); }
+};
+function notesPageLabel(start, end) {
+  if (!start) return "No pages";
+  return start === end ? `Page ${start}` : `Pages ${start}–${end}`;
+}
+function isNotesIssue(row) {
+  return row.stale || (!row.matched && row.mapping_mode !== "disabled");
+}
+function applyReleaseNotesToTrackRows() {
+  const byTrack = new Map((releaseNotesStatus?.tracks || []).map(row => [row.track_id, row]));
+  document.querySelectorAll("#track-rows tr").forEach(tr => {
+    const cell = tr.querySelector(".track-notes-state"), row = byTrack.get(tr._track?.id);
+    if (!cell) return;
+    cell.className = "notes-state track-notes-state";
+    if (!row) { cell.textContent = "Checking…"; return; }
+    if (row.matched) {
+      cell.textContent = `${row.mapping_mode === "manual" ? "Manual" : "Auto"} · ${notesPageLabel(row.page_start, row.page_end)}${row.stale ? " · review" : ""}`;
+      cell.classList.add(row.stale ? "stale" : "ready");
+    } else {
+      cell.textContent = row.mapping_mode === "disabled" ? "Disabled" : "Not mapped";
+    }
+  });
+}
+function renderReleaseNotesStatus() {
+  if (!releaseNotesStatus) return;
+  const status = releaseNotesStatus, chip = $("notes-studio-status");
+  const issueCount = status.tracks.filter(isNotesIssue).length;
+  const staleCount = status.tracks.filter(row => row.stale).length;
+  const missingCount = status.tracks.filter(row => !row.matched && row.mapping_mode !== "disabled").length;
+  const disabledCount = status.tracks.filter(row => row.mapping_mode === "disabled").length;
+  chip.className = "status-chip";
+  if (!status.available) {
+    chip.textContent = "No notes PDF";
+    chip.classList.add("danger");
+  } else {
+    chip.textContent = `${status.mapped_tracks}/${status.total_tracks} mapped${status.stale_tracks ? ` · ${status.stale_tracks} review` : ""}`;
+    chip.classList.add(status.mapped_tracks === status.total_tracks && !status.stale_tracks ? "success" : "danger");
+  }
+  $("notes-source-name").textContent = status.source_name || "No choreography PDF detected";
+  $("notes-source-meta").textContent = status.available
+    ? `${status.page_count} source pages · automatic whole-track groups · manual choices persist`
+    : "Add the standard choreography-notes PDF to this release folder.";
+  const sourceButton = $("btn-notes-source");
+  sourceButton.classList.toggle("hidden", !status.available);
+  if (status.available) sourceButton.href = `/api/releases/${rel.id}/choreography-notes/source`;
+  else sourceButton.removeAttribute("href");
+  const browseButton = $("btn-notes-browse");
+  browseButton.disabled = !status.available;
+  browseButton.textContent = status.available ? `Browse all ${status.page_count} pages` : "Browse all pages";
+  const issuesButton = $("btn-notes-issues");
+  issuesButton.textContent = notesIssuesOnly ? `Show all · ${status.total_tracks}` : `Review issues · ${issueCount}`;
+  issuesButton.setAttribute("aria-pressed", String(notesIssuesOnly));
+  issuesButton.classList.toggle("active", notesIssuesOnly);
+  issuesButton.disabled = !notesIssuesOnly && issueCount === 0;
+  const banner = $("notes-review-banner"), guidance = [];
+  if (!status.available) guidance.push("Source PDF missing or unreadable. Add standard choreography notes to the release folder, then rescan.");
+  if (staleCount) guidance.push(`${staleCount} saved ${staleCount === 1 ? "range needs" : "ranges need"} review after the source PDF changed.`);
+  if (missingCount && status.available) guidance.push(`${missingCount} ${missingCount === 1 ? "track could" : "tracks could"} not be mapped automatically.`);
+  if (!guidance.length && disabledCount) guidance.push(`${disabledCount} ${disabledCount === 1 ? "track is" : "tracks are"} intentionally excluded from study notes.`);
+  banner.textContent = guidance.join(" ");
+  banner.classList.toggle("hidden", !guidance.length);
+  banner.classList.toggle("neutral", !issueCount && status.available);
+  const list = $("notes-mapping-list");
+  list.innerHTML = "";
+  if (!status.tracks.length) {
+    list.innerHTML = '<div class="notes-loading">Add detected tracks before mapping notes.</div>';
+    applyReleaseNotesToTrackRows();
+    syncNotesPreview(status);
+    return;
+  }
+  const visibleTracks = notesIssuesOnly ? status.tracks.filter(isNotesIssue) : status.tracks;
+  if (!visibleTracks.length) {
+    list.innerHTML = '<div class="notes-loading">No mapping issues. Every active track has study notes.</div>';
+  }
+  for (const row of visibleTracks) {
+    const item = document.createElement("div");
+    item.className = "notes-map-row";
+    const modeLabel = row.mapping_mode === "manual" ? "Manual" : row.mapping_mode === "disabled" ? "Disabled" : "Auto";
+    const stateClass = row.matched ? (row.stale ? "danger" : "success") : "danger";
+    const stateText = row.matched
+      ? `${modeLabel} · ${notesPageLabel(row.page_start, row.page_end)}${row.stale ? " · source changed, review" : ""}`
+      : `${modeLabel} · ${row.reason}`;
+    const matchingOption = row.options.find(option =>
+      row.mapping_mode === "manual" && option.page_start === row.page_start && option.page_end === row.page_end
+    );
+    const selected = row.mapping_mode === "auto" ? "auto"
+      : row.mapping_mode === "disabled" ? "disabled"
+      : matchingOption ? `range:${matchingOption.page_start}:${matchingOption.page_end}` : "custom";
+    const choices = [
+      '<option value="auto">Auto · recommended group</option>',
+      ...row.options.map(option => `<option value="range:${option.page_start}:${option.page_end}">${esc(option.label)}${option.recommended ? " · recommended" : ""}</option>`),
+      '<option value="custom">Custom page range…</option>',
+      '<option value="disabled">Disable notes for track</option>',
+    ].join("");
+    item.innerHTML = `<div class="notes-map-name"><strong>${esc(row.name)}</strong><div class="notes-map-meta ${stateClass}">${esc(stateText)}</div></div>
+      <div class="notes-map-control"><select aria-label="Notes mapping for ${esc(row.name)}">${choices}</select>
+        <div class="notes-custom-range hidden"><input type="number" min="1" max="${status.page_count || 2000}" aria-label="First source page" value="${row.page_start || 1}"><span>to</span><input type="number" min="1" max="${status.page_count || 2000}" aria-label="Last source page" value="${row.page_end || row.page_start || 1}"><button class="btn small" type="button">Save</button></div></div>
+      <button class="btn small notes-map-preview" type="button"${row.matched ? "" : " disabled"}>Preview</button>`;
+    const select = item.querySelector("select"), custom = item.querySelector(".notes-custom-range");
+    const [startInput, endInput] = custom.querySelectorAll("input");
+    const save = custom.querySelector("button"), preview = item.querySelector(".notes-map-preview");
+    select.value = selected;
+    custom.classList.toggle("hidden", selected !== "custom");
+    select.onchange = async () => {
+      custom.classList.toggle("hidden", select.value !== "custom");
+      if (select.value === "custom") { startInput.focus(); return; }
+      if (select.value === "auto" || select.value === "disabled") {
+        await saveReleaseChoreography(row.track_id, { mode: select.value }, select);
+        return;
+      }
+      const [, start, end] = select.value.split(":");
+      await saveReleaseChoreography(row.track_id, { mode: "manual", page_start: +start, page_end: +end }, select);
+    };
+    save.onclick = () => saveReleaseChoreography(row.track_id, {
+      mode: "manual", page_start: +startInput.value, page_end: +endInput.value,
+    }, save);
+    preview.onclick = () => openNotesPreview(row);
+    list.appendChild(item);
+  }
+  applyReleaseNotesToTrackRows();
+  syncNotesPreview(status);
+}
+async function saveReleaseChoreography(trackId, body, control) {
+  control.disabled = true;
+  try {
+    releaseNotesStatus = await api(`/api/tracks/${trackId}/choreography-mapping`, { method: "PUT", body });
+    renderReleaseNotesStatus();
+    toast(body.mode === "auto" ? "Automatic notes mapping restored" : body.mode === "disabled" ? "Track notes disabled" : "Notes mapping saved");
+  } catch (error) {
+    toast.error(error.message);
+    renderReleaseNotesStatus();
+  } finally { control.disabled = false; }
+}
+async function loadReleaseChoreographyStatus() {
+  const request = ++releaseNotesRequest, releaseId = rel?.id;
+  releaseNotesStatus = null;
+  $("notes-studio-status").className = "status-chip";
+  $("notes-studio-status").textContent = "Checking…";
+  applyReleaseNotesToTrackRows();
+  if (!releaseId) return;
+  try {
+    const status = await api(`/api/releases/${releaseId}/choreography-notes`);
+    if (request !== releaseNotesRequest || rel?.id !== releaseId) return;
+    releaseNotesStatus = status;
+    renderReleaseNotesStatus();
+  } catch (error) {
+    if (request !== releaseNotesRequest || rel?.id !== releaseId) return;
+    $("notes-studio-status").textContent = "Check failed";
+    $("notes-studio-status").classList.add("danger");
+    $("notes-mapping-list").innerHTML = `<div class="notes-loading">${esc(error.message)}</div>`;
+  }
+}
+function closeNotesPreview(message = "Choose Preview beside a mapped track.") {
+  notesPreviewPages = [];
+  notesPreviewIndex = 0;
+  notesPreviewTrack = "";
+  notesPreviewTrackId = null;
+  $("notes-preview-content").classList.add("hidden");
+  $("notes-preview-empty").textContent = message;
+  $("notes-preview-empty").classList.remove("hidden");
+  $("notes-preview-image").removeAttribute("src");
+  $("notes-preview-page").value = "";
+}
+function syncNotesPreview(status) {
+  if (notesPreviewTrackId == null) return;
+  const row = status.tracks.find(candidate => candidate.track_id === notesPreviewTrackId);
+  if (!row || !row.matched) {
+    closeNotesPreview("Selected track no longer has mapped pages.");
+    return;
+  }
+  const currentPage = notesPreviewPages[notesPreviewIndex];
+  notesPreviewPages = row.source_pages.slice();
+  notesPreviewIndex = Math.max(0, notesPreviewPages.indexOf(currentPage));
+  notesPreviewTrack = row.name;
+  renderNotesPreview();
+}
+function renderNotesPreview() {
+  if (!notesPreviewPages.length || !rel) return;
+  const page = notesPreviewPages[notesPreviewIndex];
+  $("notes-preview-empty").classList.add("hidden");
+  $("notes-preview-content").classList.remove("hidden");
+  $("notes-preview-image").src = `/api/releases/${rel.id}/choreography-notes/pages/${page}`;
+  $("notes-preview-image").alt = `${notesPreviewTrack}, choreography notes page ${page}`;
+  $("notes-preview-label").textContent = `${notesPreviewTrack} · page ${page} of ${releaseNotesStatus?.page_count || notesPreviewPages.length}`;
+  $("notes-preview-page").max = releaseNotesStatus?.page_count || notesPreviewPages.length;
+  $("notes-preview-page").value = page;
+  $("notes-preview-prev").disabled = notesPreviewIndex === 0;
+  $("notes-preview-next").disabled = notesPreviewIndex === notesPreviewPages.length - 1;
+}
+function openNotesPreview(row) {
+  notesPreviewPages = row.source_pages.slice();
+  notesPreviewIndex = 0;
+  notesPreviewTrack = row.name;
+  notesPreviewTrackId = row.track_id;
+  renderNotesPreview();
+  $("notes-preview").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function browseAllNotesPages(page = 1, label = "Full source PDF") {
+  const count = releaseNotesStatus?.page_count || 0;
+  if (!count) return;
+  notesPreviewPages = Array.from({ length: count }, (_, index) => index + 1);
+  notesPreviewIndex = Math.max(0, Math.min(count - 1, Number(page) - 1));
+  notesPreviewTrack = label;
+  notesPreviewTrackId = null;
+  renderNotesPreview();
+  $("notes-preview").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function jumpNotesPreview() {
+  const count = releaseNotesStatus?.page_count || 0;
+  const page = Number($("notes-preview-page").value);
+  if (!Number.isInteger(page) || page < 1 || page > count) {
+    toast.error(`Choose a page from 1 to ${count}`);
+    return;
+  }
+  browseAllNotesPages(page);
+}
+$("notes-preview-prev").onclick = () => { if (notesPreviewIndex > 0) { notesPreviewIndex--; renderNotesPreview(); } };
+$("notes-preview-next").onclick = () => { if (notesPreviewIndex < notesPreviewPages.length - 1) { notesPreviewIndex++; renderNotesPreview(); } };
+$("btn-notes-browse").onclick = () => browseAllNotesPages();
+$("notes-preview-go").onclick = jumpNotesPreview;
+$("notes-preview-page").onkeydown = event => { if (event.key === "Enter") jumpNotesPreview(); };
+$("btn-notes-issues").onclick = () => {
+  notesIssuesOnly = !notesIssuesOnly;
+  renderReleaseNotesStatus();
+};
+$("btn-notes-rescan").onclick = async () => {
+  const button = $("btn-notes-rescan");
+  button.disabled = true;
+  try {
+    releaseNotesStatus = await api(`/api/releases/${rel.id}/choreography-notes/rescan`, { method: "POST" });
+    renderReleaseNotesStatus();
+    toast("Choreography notes rescanned");
+  } catch (error) { toast.error(error.message); }
+  finally { button.disabled = false; }
+};
+function renderTracks() {
+  const tbody = $("track-rows");
+  tbody.innerHTML = "";
+  for (const t of rel.tracks) {
+    const tr = document.createElement("tr");
+    tr._track = t;
+    tr.innerHTML = `<td data-label="Detected track">${esc(t.name)}</td>
+      <td data-label="Matched audio" class="matched-song">${t.music_name ? `♪ ${esc(t.music_name)}` : "No audio matched"}</td>
+      <td data-label="Notes" class="notes-state track-notes-state">Checking…</td>
+      <td data-label="Start"><button class="tracktime" type="button" aria-label="Jump to ${esc(t.name)} start">${fmt(t.start)}</button></td>
+      <td data-label="End"><button class="tracktime" type="button" aria-label="Jump near ${esc(t.name)} end">${fmt(t.end)}</button></td>
+      <td data-label="Length" class="muted">${fmt(t.end - t.start)}</td>
+      <td data-label="Status" class="playing-label track-state"></td>
+      <td data-label="Edit boundaries" class="track-actions"><button class="btn small" type="button">start⟟</button> <button class="btn small" type="button">end⟟</button> <button class="btn small danger" type="button">✕</button></td>`;
+    const [startCell, endCell] = tr.querySelectorAll(".tracktime");
+    startCell.onclick = () => { $("rel-video").currentTime = t.start; };
+    endCell.onclick = () => { $("rel-video").currentTime = Math.max(0, t.end - 3); };
+    const [bStart, bEnd, bDel] = tr.querySelectorAll(".track-actions button");
+    bStart.title = "Move this track's START to the playhead";
+    bStart.setAttribute("aria-label", `Move ${t.name} start to the playhead`);
+    bEnd.title = "Move this track's END to the playhead";
+    bEnd.setAttribute("aria-label", `Move ${t.name} end to the playhead`);
+    bStart.onclick = async () => { await patchTrack(t.id, { start: $("rel-video").currentTime }); };
+    bEnd.onclick = async () => { await patchTrack(t.id, { end: $("rel-video").currentTime }); };
+    bDel.title = "Reject this segment (restorable below)";
+    bDel.setAttribute("aria-label", `Reject ${t.name}`);
+    bDel.onclick = async () => {
+      try {
+        await api("/api/tracks/" + t.id, { method: "DELETE" });
+        rel = await api("/api/releases/" + rel.id);
+        renderTracks();
+        renderCurationState();
+        toast("Segment rejected");
+      } catch (error) {
+        toast.error(error.message);
+      }
+    };
+    tbody.appendChild(tr);
+  }
+  renderRejectedTracks();
+  updateReleasePlaybackUI();
+  loadReleaseChoreographyStatus();
+}
+function renderRejectedTracks() {
+  const rejected = rel.rejected_tracks || [], section = $("rejected-section");
+  section.classList.toggle("hidden", rejected.length === 0);
+  $("rejected-count").textContent = rejected.length;
+  const wrap = $("rejected-list");
+  wrap.innerHTML = "";
+  for (const track of rejected) {
+    const row = document.createElement("div");
+    row.className = "mixitem";
+    row.innerHTML = `<div class="grow"><div class="name">${esc(track.name)}</div>
+      <div class="sub">${fmt(track.start)} → ${fmt(track.end)} · ${fmt(track.end - track.start)}${track.music_name ? ` · ♪ ${esc(track.music_name)}` : ""}</div></div>
+      <button class="btn small" type="button">Restore</button>`;
+    row.querySelector("button").onclick = async () => {
+      try {
+        await api("/api/tracks/" + track.id, { method: "PATCH", body: { rejected: 0 } });
+        rel = await api("/api/releases/" + rel.id);
+        renderTracks();
+        renderCurationState();
+        toast("Segment restored");
+      } catch (error) {
+        toast.error(error.message);
+      }
+    };
+    wrap.appendChild(row);
+  }
+}
+function updateReleasePlaybackUI() {
+  const v = $("rel-video");
+  const active = currentView === "release" && !v.paused;
+  const current = rel && rel.tracks.find(t => v.currentTime >= t.start && v.currentTime < t.end);
+  const banner = $("rel-now");
+  banner.classList.toggle("hidden", !current && !active);
+  if (current) {
+    $("rel-now-title").textContent = `${active ? "Playing" : "Current"} detected track: ${current.name}`;
+    $("rel-now-range").textContent = `${rel.title} · ${fmt(current.start)} → ${fmt(current.end)} · playhead ${fmt(v.currentTime)}`;
+    $("rel-now-song").textContent = `Matched audio: ${current.music_name || "none"}`;
+  } else if (active) {
+    $("rel-now-title").textContent = "Playing outside detected tracks";
+    $("rel-now-range").textContent = `${rel.title} · playhead ${fmt(v.currentTime)}`;
+    $("rel-now-song").textContent = "Matched audio: none";
+  }
+  document.querySelectorAll("#track-rows tr").forEach(tr => {
+    const isCurrent = !!current && tr._track && tr._track.id === current.id;
+    tr.classList.toggle("current-segment", isCurrent);
+    const state = tr.querySelector(".track-state");
+    if (state) state.textContent = isCurrent ? (active ? "▶ Playing segment" : "Current segment") : "";
+  });
+}
+for (const event of ["loadedmetadata", "timeupdate", "seeked", "play", "pause"]) {
+  $("rel-video").addEventListener(event, updateReleasePlaybackUI);
+}
+async function patchTrack(id, body) {
+  try { await api("/api/tracks/" + id, { method: "PATCH", body }); }
+  catch (e) { return toast.error(e.message); }
+  try {
+    rel = await api("/api/releases/" + rel.id);
+    renderTracks();
+  } catch (error) {
+    toast.error(`Track saved, but refresh failed: ${error.message}`);
+  }
+}
+
+// ---------- mixes ----------
+let mix = null;
+let dragIdx = null;
+let mixesCache = [];
+async function loadMixes() {
+  const list = $("mix-list");
+  list.setAttribute("aria-busy", "true");
+  try {
+    mixesCache = await api("/api/mixes");
+    renderMixList();
+    fillGenPrograms();
+  } catch (error) {
+    if (mixesCache.length) {
+      renderMixList();
+      toast.error("Couldn’t refresh mixes — showing the last loaded list");
+    } else {
+      renderCollectionFailure(
+        "mix-list", "Couldn’t load mixes",
+        "Saved mixes are unchanged. Check the server, then retry.", loadMixes
+      );
+    }
+  } finally {
+    list.removeAttribute("aria-busy");
+  }
+}
+function renderMixList() {
+  const q = $("mixes-filter").value.trim().toLowerCase();
+  const mixes = mixesCache.filter(m => !q || m.name.toLowerCase().includes(q));
+  const list = $("mix-list");
+  unobserveThumbnails(list);
+  list.innerHTML = "";
+  const holder = viewMode === "grid" ? document.createElement("div") : list;
+  if (viewMode === "grid") holder.className = "grid";
+  for (const m of mixes) {
+    const meta = `${m.item_count} track${m.item_count === 1 ? "" : "s"} · ${fmt(m.total_duration)}`;
+    if (viewMode === "grid") {
+      const card = gcard(
+        thumbHTML(m.cover_release_id, m.name, `${m.name} mix cover`),
+        m.name,
+        meta,
+        () => openMix(m.id)
+      );
+      holder.appendChild(card);
+    } else {
+      const div = document.createElement("button");
+      div.type = "button";
+      div.className = "card card-button";
+      div.innerHTML = `<div><div>${esc(m.name)}</div><div class="meta">${meta}</div></div>
+        <div class="muted">open →</div>`;
+      div.onclick = () => openMix(m.id);
+      holder.appendChild(div);
+    }
+  }
+  if (!mixes.length) {
+    list.innerHTML = `<p class="muted">${q ? "No mixes match this filter." : "No mixes yet. Build one yourself above, or generate one automatically."}</p>`;
+    return;
+  }
+  if (viewMode === "grid") list.appendChild(holder);
+}
+$("mixes-filter").oninput = debounce(renderMixList);
+$("btn-create-mix").onclick = async () => {
+  const name = $("new-mix-name").value.trim();
+  if (!name) return toast("Give the mix a name");
+  const button = $("btn-create-mix");
+  if (button.dataset.busy) return;
+  setButtonBusy(button, true, "Creating…");
+  try {
+    const m = await api("/api/mixes", { method: "POST", body: { name } });
+    $("new-mix-name").value = "";
+    await openMix(m.id);
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    setButtonBusy(button, false);
+  }
+};
+$("new-mix-name").onkeydown = event => {
+  if (event.key === "Enter") $("btn-create-mix").click();
+};
+async function fillGenPrograms() {
+  try {
+    const rels = await api("/api/releases");
+    const programs = [...new Set(rels.map(r => r.program).filter(Boolean))];
+    $("gen-program").innerHTML = programs.map(p => `<option>${esc(p)}</option>`).join("");
+    $("gen-programs").innerHTML = programs.map(p =>
+      `<label class="pill program-chip"><input type="checkbox" value="${esc(p)}"> ${esc(p)}</label>`).join("");
+  } catch {}
+}
+function syncGenMode() {
+  const isProgram = $("gen-mode").value === "program";
+  $("gen-program-field").classList.toggle("hidden", !isProgram);
+  $("gen-programs-field").classList.toggle("hidden", isProgram);
+}
+$("gen-mode").onchange = syncGenMode;
+syncGenMode();
+function syncGenPool() {
+  const discovery = $("gen-source-pool").value === "discovery";
+  $("gen-pool-help").textContent = discovery
+    ? "Discovery uses numbered detected segments across Curated and unchecked releases. Unnumbered intros and setup sections stay out."
+    : "Curated uses only releases you checked and explicitly marked Curated.";
+}
+$("gen-source-pool").onchange = syncGenPool;
+syncGenPool();
+const generatorAdvancedIds = [
+  "gen-name", "gen-slot-min", "gen-slot-max", "gen-rel-min", "gen-rel-max",
+  "gen-required-slots", "gen-excluded-slots", "gen-max-per-release", "gen-seed"
+];
+const generatorToggleIds = ["gen-include-rejected", "gen-include-vault"];
+function updateGenFilterCount() {
+  const count = generatorAdvancedIds.filter(id => $(id).value.trim()).length +
+    generatorToggleIds.filter(id => $(id).checked).length;
+  $("gen-filter-count").textContent = `${count} active`;
+}
+generatorAdvancedIds.forEach(id => $(id).addEventListener("input", updateGenFilterCount));
+generatorToggleIds.forEach(id => $(id).addEventListener("change", updateGenFilterCount));
+$("btn-clear-generator").onclick = () => {
+  $("gen-source-pool").value = "curated";
+  $("gen-mode").value = "program";
+  $("gen-minutes").value = "60";
+  generatorAdvancedIds.forEach(id => { $(id).value = ""; });
+  generatorToggleIds.forEach(id => { $(id).checked = false; });
+  document.querySelectorAll("#gen-programs input").forEach(box => { box.checked = false; });
+  syncGenMode();
+  syncGenPool();
+  updateGenFilterCount();
+  toast("Generator cleared");
+};
+function genInteger(id, label) {
+  const value = $(id).value.trim();
+  if (!value) return null;
+  if (!/^\d+$/.test(value)) throw new Error(`${label} must be a whole number`);
+  return Number(value);
+}
+function genSlotList(id, label) {
+  const value = $(id).value.trim();
+  if (!value) return [];
+  const parts = value.split(/[\s,]+/).filter(Boolean);
+  if (parts.some(part => !/^\d+$/.test(part)))
+    throw new Error(`${label} must use slot numbers separated by commas`);
+  return [...new Set(parts.map(Number))];
+}
+$("btn-generate").onclick = async () => {
+  const button = $("btn-generate");
+  if (button.dataset.busy) return;
+  setButtonBusy(button, true, "Generating…");
+  try {
+    const body = {
+      mode: $("gen-mode").value,
+      source_pool: $("gen-source-pool").value,
+      include_rejected: $("gen-include-rejected").checked,
+      include_vault: $("gen-include-vault").checked,
+      minutes: genInteger("gen-minutes", "Target minutes") ?? 60
+    };
+    if (body.mode === "program") body.program = $("gen-program").value;
+    else {
+      const programs = [...document.querySelectorAll("#gen-programs input:checked")].map(c => c.value);
+      if (programs.length) body.programs = programs;
+    }
+    const name = $("gen-name").value.trim();
+    if (name) body.name = name;
+    for (const [key, id, label] of [
+      ["slot_min", "gen-slot-min", "Minimum slot"],
+      ["slot_max", "gen-slot-max", "Maximum slot"],
+      ["release_min", "gen-rel-min", "Minimum release"],
+      ["release_max", "gen-rel-max", "Maximum release"],
+      ["max_per_release", "gen-max-per-release", "Max tracks per release"],
+      ["seed", "gen-seed", "Random seed"]
+    ]) {
+      const value = genInteger(id, label);
+      if (value != null) body[key] = value;
+    }
+    const required = genSlotList("gen-required-slots", "Required slots");
+    const excluded = genSlotList("gen-excluded-slots", "Excluded slots");
+    if (required.length) body.required_slots = required;
+    if (excluded.length) body.excluded_slots = excluded;
+    const m = await api("/api/mixes/generate", { method: "POST", body });
+    toast(`Generated ${m.items.length} tracks · ${fmt(m.total_duration)}`);
+    await openMix(m.id);
+  } catch (e) {
+    toast.error(e.message);
+  } finally {
+    setButtonBusy(button, false);
+  }
+};
+async function openMix(id) {
+  stopPlayback();
+  let nextMix;
+  try {
+    nextMix = await api("/api/mixes/" + id);
+  } catch (error) {
+    toast.error(`Couldn’t open mix: ${error.message}`);
+    return;
+  }
+  mix = nextMix;
+  renderMix();
+  try {
+    await renderPicker();
+  } catch (error) {
+    pickerCache = [];
+    renderPickerList();
+    toast.error(`Mix opened, but available tracks could not load: ${error.message}`);
+  }
+  showView("mix", true);
+}
+let segEnd = null, previewingSegment = null;
+function previewSegment(slotId, segment) {
+  const box = $("seg-preview"), v = $("seg-video");
+  claimPlayback("seg-video");
+  $(slotId).appendChild(box);
+  box.classList.remove("hidden");
+  previewingSegment = segment;
+  segEnd = segment.end;
+  $("seg-preview-title").textContent = `Previewing detected track: ${segment.name}`;
+  $("seg-preview-sub").textContent = `${segment.release_title || "Release"} · ${fmt(segment.start)} → ${fmt(segment.end)} · ${fmt(segment.end - segment.start)}`;
+  $("seg-preview-song").textContent = `Matched audio: ${segment.music_name || "none"}`;
+  updateSongPlayingUI();
+  const seek = () => { v.currentTime = segment.start; v.play().catch(() => {}); };
+  if (v.dataset.rid !== String(segment.release_id)) {
+    v.dataset.rid = String(segment.release_id);
+    v.src = "/api/stream/" + segment.release_id;
+    v.addEventListener("loadedmetadata", seek, { once: true });
+    v.load();
+  } else seek();
+}
+$("seg-video").addEventListener("timeupdate", () => {
+  if (segEnd != null && $("seg-video").currentTime >= segEnd - 0.05) $("seg-video").pause();
+});
+$("seg-video").addEventListener("play", updateSongPlayingUI);
+$("seg-video").addEventListener("pause", updateSongPlayingUI);
+$("seg-close").onclick = () => {
+  $("seg-video").pause();
+  previewingSegment = null;
+  $("seg-preview").classList.add("hidden");
+  updateSongPlayingUI();
+};
+function playOneSong(it) {
+  if (it.music_index == null) return toast("No song matched for this segment");
+  songQueue = [it];
+  songPos = 0;
+  playSong();
+}
+let choreographyStatusRequest = 0;
+async function refreshChoreographyStatus() {
+  const request = ++choreographyStatusRequest;
+  const mixId = mix && mix.id;
+  const button = $("btn-choreo-notes");
+  button.disabled = true;
+  button.textContent = "Notes checking…";
+  button.title = "Checking release folders for matching choreography notes";
+  if (!mixId || !mix.items.length) {
+    button.textContent = "Study PDF unavailable";
+    button.title = "Add tracks to this mix first";
+    return;
+  }
+  try {
+    const status = await api(`/api/mixes/${mixId}/choreography-notes/status`);
+    if (request !== choreographyStatusRequest || !mix || mix.id !== mixId) return;
+    for (const item of status.items || []) {
+      const state = document.querySelector(`#mix-items .mixitem[data-item-id="${item.item_id}"] .notes-state`);
+      if (!state) continue;
+      state.className = "notes-state";
+      if (item.matched) {
+        const first = item.source_pages[0], last = item.source_pages[item.source_pages.length - 1];
+        state.textContent = `Study notes: ${item.mapping_mode === "manual" ? "manual" : "auto"} · ${notesPageLabel(first, last)}${item.stale ? " · review source change" : ""}`;
+        state.classList.add(item.stale ? "stale" : "ready");
+      } else {
+        state.textContent = `Study notes: ${item.reason || "not mapped"}`;
+      }
+    }
+    button.disabled = !status.ready;
+    if (!status.ready) {
+      button.textContent = "Study PDF unavailable";
+      button.title = "No matching choreography notes found in release folders";
+      return;
+    }
+    button.textContent = `⬇ Study PDF · ${status.matched_tracks}/${status.total_tracks}`;
+    if (status.complete) {
+      button.title = "Download one study PDF with matching source choreography pages";
+    } else {
+      const gaps = status.missing.slice(0, 3)
+        .map(item => `${item.position}. ${item.release_title}: ${item.reason}`).join(" · ");
+      button.title = `Partial notes coverage. Missing: ${gaps}`;
+    }
+  } catch (error) {
+    if (request !== choreographyStatusRequest || !mix || mix.id !== mixId) return;
+    button.disabled = true;
+    button.textContent = "Study PDF unavailable";
+    button.title = error.message;
+  }
+}
+function renderMix() {
+  $("mix-title").textContent = mix.name;
+  $("btn-audio").textContent = mix.audio ? "🎙 Voice: OFF (track 2)" : "🎙 Voice: ON (default)";
+  $("btn-songs-zip").href = `/api/mixes/${mix.id}/songs.zip`;
+  $("btn-package").disabled = Boolean($("btn-package").dataset.busy) || !mix.items.length;
+  $("mix-summary").textContent = `${mix.items.length} tracks · total ${fmt(mix.total_duration)}`;
+  refreshChoreographyStatus();
+  $("mix-empty").classList.toggle("hidden", mix.items.length > 0);
+  const wrap = $("mix-items");
+  wrap.innerHTML = "";
+  mix.items.forEach((it, i) => {
+    const div = document.createElement("div");
+    div.className = "mixitem";
+    div.dataset.itemId = it.item_id;
+    div._segment = it;
+    div.innerHTML = `<div class="grow"><div class="name">${esc(it.name)}</div>
+      <div class="sub">${esc(it.release_title)} · ${fmt(it.start)} → ${fmt(it.end)} · ${fmt(it.end - it.start)}${it.missing ? " · ⚠ file missing" : ""}</div>
+      <div class="matched-song">Matched song: ${it.music_name ? esc(it.music_name) : "none"}</div>
+      <div class="notes-state">Study notes: checking…</div></div>
+      <div class="playback-labels"><div class="playing-label song-state"></div><div class="playing-label preview-state"></div></div>
+      <div class="mix-row-actions"><button class="btn small" type="button" aria-label="Preview ${esc(it.name)} video segment" title="Preview this video segment">▷</button><button class="btn small" type="button" aria-label="Play matched song for ${esc(it.name)}" title="Play the matched song"${it.music_index == null ? " disabled" : ""}>♫</button><button class="btn small" type="button" aria-label="Choose matched song for ${esc(it.name)}" title="Pick which song file belongs to this segment">♪</button><button class="btn small" type="button" aria-label="Move ${esc(it.name)} up">↑</button><button class="btn small" type="button" aria-label="Move ${esc(it.name)} down">↓</button><button class="btn small danger" type="button" aria-label="Remove ${esc(it.name)} from mix">✕</button></div>`;
+    const [prev, listen, mus, up, down, del] = div.querySelectorAll("button");
+    prev.onclick = (e) => { e.stopPropagation(); previewSegment("seg-slot-items", it); };
+    listen.onclick = (e) => { e.stopPropagation(); playOneSong(it); };
+    mus.onclick = (e) => pickSong(e, it, mus);
+    up.onclick = () => moveItem(i, -1);
+    down.onclick = () => moveItem(i, 1);
+    del.onclick = () => setItems(mix.items.filter((_, j) => j !== i).map(x => x.track_id));
+    div.draggable = true;
+    div.addEventListener("dragstart", (e) => {
+      dragIdx = i;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/x-mixmill-item", String(i));
+    });
+    div.addEventListener("dragend", () => { dragIdx = null; div.classList.remove("dropping"); });
+    div.addEventListener("dragover", (e) => { e.preventDefault(); div.classList.add("dropping"); });
+    div.addEventListener("dragleave", (e) => { if (!div.contains(e.relatedTarget)) div.classList.remove("dropping"); });
+    div.addEventListener("drop", (e) => {
+      e.preventDefault();
+      div.classList.remove("dropping");
+      const from = dragIdx;
+      dragIdx = null;
+      if (!e.dataTransfer.types.includes("application/x-mixmill-item")) return;
+      if (from === null || from === i || from >= mix.items.length) return;
+      const ids = mix.items.map(x => x.track_id);
+      const [moved] = ids.splice(from, 1);
+      ids.splice(i, 0, moved);
+      setItems(ids);
+    });
+    wrap.appendChild(div);
+  });
+  updateSongPlayingUI();
+}
+$("btn-choreo-notes").onclick = () => {
+  const button = $("btn-choreo-notes");
+  if (!mix || button.disabled) return;
+  window.location.assign(`/api/mixes/${mix.id}/choreography-notes`);
+};
+let musicListCache = {};
+async function musicFor(rid) {
+  if (!musicListCache[rid]) {
+    try { musicListCache[rid] = await api(`/api/releases/${rid}/music`); }
+    catch { musicListCache[rid] = []; }
+  }
+  return musicListCache[rid];
+}
+async function pickSong(e, it, btn) {
+  e.stopPropagation();
+  const files = await musicFor(it.release_id);
+  if (!files.length) return toast("This release has no music folder");
+  const sel = document.createElement("select");
+  sel.innerHTML = `<option value="auto">auto (by track number)</option>` +
+    files.map(f => `<option value="${f.index}"${f.index === it.music_index ? " selected" : ""}>${esc(f.name)}</option>`).join("");
+  btn.replaceWith(sel);
+  sel.focus();
+  sel.onchange = async () => {
+    try {
+      mix = await api(`/api/mix-items/${it.item_id}`, { method: "PATCH",
+        body: { music_index: sel.value === "auto" ? null : +sel.value } });
+      renderMix();
+    } catch (error) {
+      toast.error(error.message);
+      renderMix();
+    }
+  };
+  sel.onblur = () => { if (document.body.contains(sel)) renderMix(); };
+}
+let songQueue = [], songPos = 0, playingSong = null;
+$("btn-play-music").onclick = () => {
+  songQueue = mix.items.filter(it => it.music_index != null);
+  if (!songQueue.length) return toast("No matched songs in this mix — check the ♪ on each track");
+  songPos = 0;
+  playSong();
+};
+function playSong() {
+  const a = $("mix-audio"), it = songQueue[songPos];
+  claimPlayback("mix-audio");
+  playingSong = it;
+  a.classList.remove("hidden");
+  a.src = `/api/releases/${it.release_id}/music/${it.music_index}`;
+  a.play().catch(() => {});
+  toast(`♪ ${it.music_name} (${songPos + 1}/${songQueue.length})`);
+  updateSongPlayingUI();
+}
+$("mix-audio").addEventListener("ended", () => {
+  if (songPos + 1 < songQueue.length) { songPos++; playSong(); }
+  else { playingSong = null; updateSongPlayingUI(); }
+});
+$("mix-audio").addEventListener("play", updateSongPlayingUI);
+$("mix-audio").addEventListener("pause", updateSongPlayingUI);
+function sameSong(a, b) {
+  if (!a || !b) return false;
+  if (a.item_id != null && b.item_id != null) return a.item_id === b.item_id;
+  const aTrack = a.track_id ?? a.id, bTrack = b.track_id ?? b.id;
+  return a.release_id === b.release_id && a.music_index === b.music_index &&
+    (aTrack == null || bTrack == null || aTrack === bTrack);
+}
+function sameSegment(a, b) {
+  if (!a || !b) return false;
+  const aTrack = a.track_id ?? a.id, bTrack = b.track_id ?? b.id;
+  if (aTrack != null && bTrack != null) return aTrack === bTrack;
+  return a.release_id === b.release_id && a.start === b.start && a.end === b.end;
+}
+function updateSongPlayingUI() {
+  const songActive = playingSong && !$("mix-audio").paused;
+  const previewActive = previewingSegment && !$("seg-video").paused && !$("seg-preview").classList.contains("hidden");
+  const banner = $("mix-song-now");
+  banner.classList.toggle("hidden", !songActive);
+  if (songActive) {
+    $("mix-song-title").textContent = `Playing song: ${playingSong.music_name || "Unknown song"}`;
+    $("mix-song-sub").textContent = `Matched to segment: ${playingSong.name || "Unknown segment"} · ${playingSong.release_title || "Release"}`;
+  }
+  document.querySelectorAll("#mix-items .mixitem, #mix-picker .mixitem").forEach(el => {
+    const isSong = !!songActive && sameSong(el._segment, playingSong);
+    const isPreview = !!previewActive && sameSegment(el._segment, previewingSegment);
+    el.classList.toggle("playing", isSong || isPreview);
+    const songState = el.querySelector(".song-state");
+    const previewState = el.querySelector(".preview-state");
+    if (songState) songState.textContent = isSong ? "♫ Playing matched audio" : "";
+    if (previewState) previewState.textContent = isPreview ? "▶ Playing segment" : "";
+  });
+}
+async function moveItem(i, delta) {
+  const ids = mix.items.map(x => x.track_id);
+  const j = i + delta;
+  if (j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  await setItems(ids);
+}
+let mixItemsBusy = false;
+async function setItems(ids) {
+  if (mixItemsBusy) return toast("Mix update already in progress");
+  mixItemsBusy = true;
+  try {
+    mix = await api(`/api/mixes/${mix.id}/items`, { method: "PUT", body: { track_ids: ids } });
+    renderMix();
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    mixItemsBusy = false;
+  }
+}
+$("btn-shuffle").onclick = () => {
+  const ids = mix.items.map(x => x.track_id);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  setItems(ids);
+};
+$("btn-slotorder").onclick = () => {
+  const baseOf = (n) => { const m = /^\s*0*(\d+)/.exec(n || ""); return m ? parseInt(m[1], 10) : 9999; };
+  setItems([...mix.items].sort((a, b) => baseOf(a.name) - baseOf(b.name)).map(x => x.track_id));
+};
+let pickerCache = [];
+async function renderPicker() {
+  pickerCache = await api("/api/releases?include_tracks=1");
+  renderPickerList();
+}
+function renderPickerList() {
+  const q = $("picker-filter").value.trim().toLowerCase();
+  const wrap = $("mix-picker");
+  wrap.innerHTML = "";
+  for (const r of pickerCache) {
+    if (r.vaulted) continue;
+    if (!r.tracks || !r.tracks.length) continue;
+    const relMatch = !q || r.title.toLowerCase().includes(q) || (r.program || "").toLowerCase().includes(q);
+    const tracks = relMatch ? r.tracks : r.tracks.filter(t => t.name.toLowerCase().includes(q));
+    if (!tracks.length) continue;
+    const det = document.createElement("details");
+    if (q) det.open = true;
+    const sum = document.createElement("summary");
+    sum.textContent = r.title + (r.program ? ` (${r.program})` : "");
+    det.appendChild(sum);
+    for (const t of tracks) {
+      const row = document.createElement("div");
+      row.className = "mixitem addtrack";
+      row._segment = { ...t, release_id: r.id, release_title: r.title };
+      row.innerHTML = `<div class="grow"><div class="name">${esc(t.name)}</div>
+        <div class="sub">${fmt(t.start)} → ${fmt(t.end)} · ${fmt(t.end - t.start)}</div>
+        <div class="matched-song">Matched song: ${t.music_name ? esc(t.music_name) : "none"}</div></div>
+        <div class="playback-labels"><div class="playing-label song-state"></div><div class="playing-label preview-state"></div></div>
+        <div class="mix-row-actions"><button class="btn small" type="button" aria-label="Preview ${esc(t.name)} video segment" title="Preview this video segment">▷</button><button class="btn small" type="button" aria-label="Play matched song for ${esc(t.name)}" title="Play the matched song"${t.music_index == null ? " disabled" : ""}>♫</button><button class="btn small add-symbol" type="button" aria-label="Add ${esc(t.name)} to mix" title="Add to mix">＋</button></div>`;
+      const [prev, listen, add] = row.querySelectorAll("button");
+      prev.onclick = (e) => { e.stopPropagation(); previewSegment("seg-slot-picker", row._segment); };
+      listen.onclick = (e) => { e.stopPropagation(); playOneSong(row._segment); };
+      add.onclick = (e) => { e.stopPropagation(); setItems([...mix.items.map(x => x.track_id), t.id]); };
+      row.onclick = () => setItems([...mix.items.map(x => x.track_id), t.id]);
+      det.appendChild(row);
+    }
+    wrap.appendChild(det);
+  }
+  if (!wrap.children.length) wrap.innerHTML = `<p class="muted">${q ? "No matches." : "No tracks marked yet — go to Library, open a release and mark its tracks first."}</p>`;
+  updateSongPlayingUI();
+}
+$("picker-filter").oninput = debounce(renderPickerList);
+$("btn-audio").onclick = async () => {
+  try {
+    mix = await api("/api/mixes/" + mix.id, { method: "PATCH", body: { audio: mix.audio ? 0 : 1 } });
+    renderMix();
+    if (currentView === "player" && mix.items[playIdx]) syncVoice(mix.items[playIdx]);
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+$("btn-rename-mix").onclick = async () => {
+  const name = prompt("Mix name:", mix.name);
+  if (!name || !name.trim() || name.trim() === mix.name) return;
+  if (name.trim().length > 200) return toast.error("Mix name must be 200 characters or fewer");
+  try {
+    mix = await api("/api/mixes/" + mix.id, { method: "PATCH", body: { name: name.trim() } });
+    renderMix();
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+$("btn-duplicate-mix").onclick = async () => {
+  try {
+    const copy = await api(`/api/mixes/${mix.id}/duplicate`, { method: "POST" });
+    toast("Duplicated");
+    await openMix(copy.id);
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+$("btn-delete-mix").onclick = async () => {
+  if (!confirm(`Delete mix "${mix.name}"? The source media is not affected.`)) return;
+  try {
+    await api("/api/mixes/" + mix.id, { method: "DELETE" });
+    showView("mixes", true);
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+// ---------- export ----------
+async function startExport(mode) {
+  try {
+    const res = await api(`/api/mixes/${mix.id}/export`, { method: "POST", body: { mode } });
+    toast("Export started — check the Exports tab");
+    pollExport(res.export_id);
+  } catch (e) { toast.error(e.message); }
+}
+$("btn-export-fast").onclick = () => startExport("fast");
+$("btn-export-precise").onclick = () => startExport("precise");
+$("btn-package").onclick = async () => {
+  const button = $("btn-package"), label = button.querySelector(".btn-label");
+  if (button.dataset.busy || !mix?.items.length) return;
+  const mixId = mix.id;
+  setButtonBusy(button, true, "Preparing video…");
+  try {
+    const started = await api(`/api/mixes/${mixId}/export`, {
+      method: "POST", body: { mode: "precise" },
+    });
+    toast("Package started. Frame-accurate video runs first; download begins when ready.");
+    let failures = 0;
+    while (true) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      let status;
+      try {
+        status = await api(`/api/exports/${started.export_id}`);
+        failures = 0;
+      } catch (error) {
+        if (++failures < 3) continue;
+        throw error;
+      }
+      if (label) {
+        const percent = Math.max(0, Math.min(100, Math.round((status.progress || 0) * 100)));
+        label.textContent = status.status === "queued" ? "Video queued…" : `Building video · ${percent}%`;
+      }
+      if (status.status === "error") throw new Error(status.error || "Video export failed");
+      if (status.status !== "done") continue;
+      if (label) label.textContent = "Packing files…";
+      const link = document.createElement("a");
+      link.href = `/api/mixes/${mixId}/package.zip?export_id=${encodeURIComponent(started.export_id)}`;
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast("Complete package ready. Choose where to save it.");
+      break;
+    }
+  } catch (error) {
+    toast.error(`Couldn’t build package: ${error.message}`);
+  } finally {
+    setButtonBusy(button, false);
+    button.disabled = !mix?.items.length;
+  }
+};
+function pollExport(id) {
+  let fails = 0;
+  const timer = setInterval(async () => {
+    let st;
+    try {
+      st = await api("/api/exports/" + id);
+      fails = 0;
+    } catch (e) {
+      if (/not found/i.test(e.message) || ++fails >= 3) clearInterval(timer);
+      return;
+    }
+    if (st.status === "done") { clearInterval(timer); toast(`Export "${st.mix_name}" ready ✓`); if (currentView === "exports") loadExports(); }
+    if (st.status === "error") { clearInterval(timer); toast.error("Export failed: " + st.error); }
+  }, 2000);
+}
+async function loadExports() {
+  const wrap = $("export-list");
+  wrap.setAttribute("aria-busy", "true");
+  let exports;
+  try {
+    exports = await api("/api/exports");
+  } catch (error) {
+    renderCollectionFailure(
+      "export-list", "Couldn’t load exports",
+      "Generated files are unchanged. Check the server, then retry.", loadExports
+    );
+    return;
+  } finally {
+    wrap.removeAttribute("aria-busy");
+  }
+  wrap.innerHTML = "";
+  if (!exports.length) wrap.innerHTML = `<p class="muted">No exports yet.</p>`;
+  for (const e of exports) {
+    const div = document.createElement("div");
+    div.className = "card static";
+    let right = "";
+    if (e.status === "queued") right = `<span class="pill">queued</span>`;
+    else if (e.status === "running") right = `<progress value="${e.progress}" max="1"></progress>`;
+    else if (e.status === "done") right = `<a class="btn small primary" href="/api/exports/${e.id}/download">Download</a>`;
+    else right = `<span class="export-status-failed" title="${esc(e.error || "")}">failed</span>`;
+    div.innerHTML = `<div><div>${esc(e.mix_name)} <span class="pill">${e.mode}</span></div>
+      <div class="meta">${new Date(e.created_at * 1000).toLocaleString()}</div></div>
+      <div class="row">${right}<button class="btn small danger" type="button" aria-label="${e.status === "running" ? "Cancel this export" : "Delete this export"}" title="${e.status === "running" ? "Cancel this export" : "Delete this export"}">✕</button></div>`;
+    div.querySelector(".danger").onclick = async () => {
+      const action = e.status === "running" ? "Cancel this export?" : "Delete this generated export file?";
+      if (!confirm(action)) return;
+      const button = div.querySelector(".danger");
+      if (button.dataset.busy) return;
+      setButtonBusy(button, true);
+      try {
+        await api("/api/exports/" + e.id, { method: "DELETE" });
+        await loadExports();
+      } catch (error) {
+        toast.error(error.message);
+        if (button.isConnected) setButtonBusy(button, false);
+      }
+    };
+    wrap.appendChild(div);
+  }
+  if (exports.some(e => e.status === "running" || e.status === "queued")) setTimeout(() => { if (currentView === "exports") loadExports(); }, 2000);
+}
+
+// ---------- player ----------
+let playIdx = 0;
+function playMix() {
+  if (!mix.items.length) return toast("Mix is empty");
+  stopPlayback();
+  playIdx = 0;
+  showView("player", true);
+  playSegment();
+}
+$("btn-play-mix").onclick = playMix;
+$("player-back").onclick = () => openMix(mix.id);
+$("btn-prev").onclick = () => { if (playIdx > 0) { playIdx--; playSegment(); } };
+$("btn-next").onclick = () => nextSegment();
+$("btn-back10").onclick = () => {
+  const v = $("mix-video"), it = mix.items[playIdx];
+  v.currentTime = Math.max(it.start, v.currentTime - 10);
+};
+$("btn-fwd10").onclick = () => {
+  const v = $("mix-video"), it = mix.items[playIdx];
+  v.currentTime = Math.min(it.end - 0.5, v.currentTime + 10);
+};
+function playSegment() {
+  const v = $("mix-video");
+  const it = mix.items[playIdx];
+  detachVoice();
+  v.muted = false;
+  claimPlayback("mix-video");
+  $("np-title").textContent = `Segment ${playIdx + 1}: ${it.name}`;
+  $("np-sub").textContent = `Source: ${it.release_title}${it.program ? " · " + it.program : ""} · ${fmt(it.start)} → ${fmt(it.end)} · Matched song: ${it.music_name || "none"}`;
+  $("np-count").textContent = `${playIdx + 1} / ${mix.items.length}`;
+  document.querySelectorAll("#mix-items .mixitem").forEach((el, i) => el.classList.toggle("playing", i === playIdx));
+  renderPlayerList();
+  const src = "/api/stream/" + it.release_id;
+  const seekAndPlay = () => { syncVoice(it); v.currentTime = it.start; v.play().catch(() => {}); };
+  if (v.dataset.rid !== String(it.release_id)) {
+    v.dataset.rid = String(it.release_id);
+    v.src = src;
+    v.addEventListener("loadedmetadata", seekAndPlay, { once: true });
+    v.load();
+  } else {
+    seekAndPlay();
+  }
+}
+function setVoiceBadge(txt, rid) {
+  const b = $("voice-badge");
+  b.textContent = txt;
+  b.classList.toggle("hidden", !txt);
+  if (txt && rid != null) b.dataset.rid = String(rid);
+  else delete b.dataset.rid;
+}
+// a job finishing for a release the user already skipped past must not wipe the
+// badge a newer release is currently showing
+function clearVoiceBadgeFor(rid) {
+  if ($("voice-badge").dataset.rid === String(rid)) setVoiceBadge("");
+}
+// drop whatever the audio element is holding: without this the previous
+// release's music-only track keeps playing over an unmuted video (two songs
+// at once) whenever we fall back or wait for an extraction
+function detachVoice() {
+  const va = $("voice-audio");
+  va.pause();
+  va.removeAttribute("src");
+  delete va.dataset.rid;
+}
+// voice off = mute the video and play the release's second audio stream
+// (server-extracted, seekable) in lockstep — browsers can't switch a video's
+// embedded audio tracks, so this is the portable way
+async function attachVoice(it) {
+  const v = $("mix-video"), va = $("voice-audio");
+  let st = null;
+  try { st = await api(`/api/releases/${it.release_id}/audio-status`); } catch {}
+  const cur = mix && mix.items[playIdx];
+  if (currentView !== "player" || !mix || !mix.audio || !cur || cur.release_id !== it.release_id) return; // stale
+  if (!st || st.streams < 2) {
+    v.muted = false;
+    detachVoice();
+    setVoiceBadge("");
+    toast("No separate music-only track in this release — using its normal audio");
+    return;
+  }
+  if (!st.cached) {
+    v.muted = false; // keep sound while preparing: silence would look broken
+    detachVoice();
+    setVoiceBadge("preparing voice-free audio…", it.release_id);
+    try {
+      const { job_id } = await api(`/api/releases/${it.release_id}/extract-audio`, { method: "POST" });
+      const timer = setInterval(async () => {
+        let j;
+        try { j = await api("/api/jobs/" + job_id); }
+        catch { clearInterval(timer); clearVoiceBadgeFor(it.release_id); return toast.error("Voice-free audio status unavailable — using normal audio"); }
+        if (j.status === "done" || j.status === "error") {
+          clearInterval(timer);
+          clearVoiceBadgeFor(it.release_id);
+          if (j.status === "error") return toast.error("Voice-free audio failed: " + j.error);
+          const now = mix && mix.items[playIdx];
+          if (currentView === "player" && mix && mix.audio && now && now.release_id === it.release_id)
+            attachVoice(now);
+        }
+      }, 1500);
+    } catch (e) { clearVoiceBadgeFor(it.release_id); toast.error(e.message); }
+    return;
+  }
+  setVoiceBadge("");
+  if (va.dataset.rid !== String(it.release_id)) {
+    va.dataset.rid = String(it.release_id);
+    va.src = `/api/releases/${it.release_id}/audio?track=${mix.audio}`;
+    va.addEventListener("loadedmetadata", () => {
+      va.currentTime = v.currentTime;
+      if (!v.paused) va.play().catch(() => {});
+    }, { once: true });
+    va.onerror = () => { v.muted = false; toast("No separate music-only track in this release — using its normal audio"); };
+  } else {
+    va.currentTime = v.currentTime;
+    if (!v.paused) va.play().catch(() => {});
+  }
+  v.muted = true;
+}
+function syncVoice(it) {
+  const v = $("mix-video");
+  if (mix && mix.audio) { attachVoice(it); return; }
+  v.muted = false;
+  detachVoice();
+  setVoiceBadge("");
+}
+{
+  const v = $("mix-video"), va = $("voice-audio");
+  const syncing = () => mix && mix.audio && va.src && v.muted;
+  v.addEventListener("play", () => { if (syncing()) { va.currentTime = v.currentTime; va.play().catch(() => {}); } });
+  v.addEventListener("pause", () => va.pause());
+  v.addEventListener("seeked", () => { if (syncing()) va.currentTime = v.currentTime; });
+  v.addEventListener("ratechange", () => { va.playbackRate = v.playbackRate; });
+  v.addEventListener("timeupdate", () => {
+    if (syncing() && !v.paused && Math.abs(va.currentTime - v.currentTime) > 0.4) va.currentTime = v.currentTime;
+  });
+}
+function renderPlayerList() {
+  const wrap = $("np-list");
+  wrap.innerHTML = "";
+  mix.items.forEach((it, i) => {
+    const div = document.createElement("div");
+    div.className = "mixitem addtrack" + (i === playIdx ? " playing" : "");
+    div.innerHTML = `<div class="muted queue-index">${i + 1}</div>
+      <div class="grow"><div class="name">Segment ${i + 1}: ${esc(it.name)}</div>
+      <div class="sub">Source: ${esc(it.release_title)} · ${fmt(it.start)} → ${fmt(it.end)} · ${fmt(it.end - it.start)}</div>
+      <div class="matched-song">Matched song: ${it.music_name ? esc(it.music_name) : "none"}</div></div>
+      <div class="playing-label">${i === playIdx ? "Current segment" : ""}</div>`;
+    div.onclick = () => { playIdx = i; playSegment(); };
+    wrap.appendChild(div);
+  });
+  updateSegmentPlayingUI();
+}
+function updateSegmentPlayingUI() {
+  const active = currentView === "player" && !$("mix-video").paused;
+  document.querySelectorAll("#np-list .mixitem").forEach((el, i) => {
+    const label = el.querySelector(".playing-label");
+    if (label && i === playIdx) label.textContent = active ? "▶ Now playing segment" : "Current segment";
+  });
+}
+$("mix-video").addEventListener("play", updateSegmentPlayingUI);
+$("mix-video").addEventListener("pause", updateSegmentPlayingUI);
+function nextSegment() {
+  if (playIdx + 1 < mix.items.length) { playIdx++; playSegment(); }
+  else { $("mix-video").pause(); toast("Mix finished — nice work 💪"); }
+}
+$("mix-video").addEventListener("timeupdate", () => {
+  if (currentView !== "player" || !mix) return;
+  const it = mix.items[playIdx];
+  if (it && $("mix-video").currentTime >= it.end - 0.05) nextSegment();
+});
+const PLAYBACK_IDS = ["mix-video", "rel-video", "music-player", "voice-audio", "mix-audio", "seg-video"];
+function claimPlayback(...keepIds) {
+  const keep = new Set(keepIds);
+  for (const id of PLAYBACK_IDS) {
+    const v = $(id);
+    if (v && !keep.has(id) && !v.paused) v.pause();
+  }
+}
+function stopPlayback() { claimPlayback(); }
+for (const id of PLAYBACK_IDS) {
+  const media = $(id);
+  media.addEventListener("play", () => {
+    if (id === "mix-video" || id === "voice-audio") claimPlayback("mix-video", "voice-audio");
+    else claimPlayback(id);
+  });
+}
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// boot
+loadReleases();
+</script>
+</body>
+</html>

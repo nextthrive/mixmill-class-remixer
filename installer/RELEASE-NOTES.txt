@@ -1,0 +1,17 @@
+MixMill Desktop 1.0.0
+
+Supported on 64-bit Windows 10 version 1809 or newer and Windows 11.
+
+- MixMill only reads media originals from the folder you choose.
+- Database, settings, caches, logs, backups, and exports stay under
+  %LOCALAPPDATA%\MixMill.
+- Updating or uninstalling the program preserves that app-data folder.
+- Download buttons open a Windows Save As dialog in Downloads by default.
+- Microsoft Edge WebView2 is installed only when missing. Internet access is
+  required for that one-time prerequisite download.
+
+Privacy, support, and third-party notices are installed beside MixMill.exe.
+MixMill is free/open-source software under GNU AGPL version 3 or later.
+
+Unsigned community builds can trigger Windows SmartScreen. Download only from
+the official GitHub Releases page and verify SHA256SUMS.txt.
