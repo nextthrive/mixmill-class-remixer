@@ -110,15 +110,16 @@ Keyboard shortcuts help during review:
 
 ## 7. Understand states
 
-### Discovery
+### Needs review
 
-MixMill found the release, but it has not been reviewed. Discovery content is
-available when you intentionally choose that source pool.
+MixMill found the release or detected segments, but you have not confirmed their
+names and boundaries yet.
 
 ### Curated
 
 You reviewed the release and confirmed its tracks. Curated is the safe default
-for automatic mix generation.
+for automatic mix generation. It does not hide unreviewed releases from manual
+mixes.
 
 ### Rejected segments
 
@@ -142,17 +143,33 @@ delete a rejected segment only when you are certain it is unnecessary.
 Creating or editing a mix is instant because MixMill stores references to the
 original videos. It does not create a new video until export.
 
+The manual picker shows every kept segment from both Curated releases and
+releases that still need review. Rejected segments and vaulted releases stay
+hidden. Curated status only limits automatic generation.
+
 ## 9. Generate a mix automatically
 
 1. Open the mix generator.
 2. Choose one program or use the mixed-program option.
 3. Choose the target duration.
-4. Keep **Curated** selected for reviewed content.
+4. Keep **Curated only** selected for reviewed releases, or choose **All
+   detected** to include numbered kept segments from releases that still need
+   review. Choose **Everything** to also allow rejected segments and Vault
+   releases. Missing files and unnumbered sections remain unavailable.
 5. Use advanced filters only when needed.
 6. Generate the mix.
 7. Review, reorder, replace, or remove tracks.
 
 Generated mixes are suggestions. Always review them before teaching or sharing.
+You can remove any generated track and replace it from the picker on the right.
+Curated releases are labeled there, making reviewed replacements easy to find.
+
+### Voice-Off audio
+
+The player uses a release's second audio stream as its music-only Voice-Off
+track. **Preload Voice-Off Audio** extracts and caches that stream for every
+non-vaulted release so Voice Off starts instantly later. MixMill skips releases
+that contain only one audio stream. Originals stay unchanged.
 
 ## 10. Export and download
 

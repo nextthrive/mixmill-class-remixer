@@ -100,9 +100,11 @@ manually. Repeating Auto-detect is safe in version 1.0.1 and newer.
 
 ## Release and segment states
 
-- **Discovery** — MixMill found the release, but nobody has checked it yet.
+- **Needs review** — MixMill found or detected segments, but nobody has checked
+  their names and boundaries yet.
 - **Curated** — you reviewed the release and confirmed its tracks. Automatic
-  mix generation uses Curated releases by default.
+  mix generation uses Curated releases by default. Manual mixes can still use
+  kept segments from either state; curation only limits automatic generation.
 - **Rejected segments** — a recycle bin for unwanted segments. Rejected
   segments stay out of normal mixes, can be restored, or can be deleted
   permanently.
@@ -112,6 +114,12 @@ manually. Repeating Auto-detect is safe in version 1.0.1 and newer.
 Choose **Create empty mix** when you want full control. Choose the generator
 when you want MixMill to select tracks for a target duration. Review generated
 mixes before exporting them.
+
+The generator's release pool has three levels: **Curated only** uses reviewed
+releases, **All detected** also uses kept segments that still need review, and
+**Everything** additionally allows rejected segments and Vault releases. Missing
+files and unnumbered sections remain unavailable. After generation, remove or
+replace any track using the picker on the right; Curated sources carry a badge.
 
 - **Fast export** keeps the original video encoding and finishes sooner. Cuts
   begin at a nearby video keyframe, so a short lead-in is possible.
@@ -288,8 +296,9 @@ is intended only for isolated development against disposable fixtures.
   release's music-only audio stream instead of muting. The first time a release
   needs it, extraction runs as a background job with a "preparing voice-free
   audio…" badge while the normal audio keeps playing, and swaps over when it's
-  ready. The library's **Prepare voice audio** button pre-extracts the whole
-  library so later toggles are instant.
+  ready. **Preload Voice-Off Audio** extracts and caches each non-vaulted
+  release's second, music-only audio stream in advance, so later Voice Off
+  toggles are instant. Releases without a second audio stream are skipped.
 - **Mix housekeeping** — search box on the mixes list, one-click shuffle, and
   slot-order sort inside a mix.
 

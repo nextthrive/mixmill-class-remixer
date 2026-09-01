@@ -71,7 +71,10 @@ def choose_media_folder(
         _fields_ = [
             ("hwndOwner", wintypes.HWND),
             ("pidlRoot", ctypes.c_void_p),
-            ("pszDisplayName", wintypes.LPWSTR),
+            # This is a caller-owned output buffer, not a Python string.
+            # POINTER(c_wchar) accepts create_unicode_buffer on Python 3.12+;
+            # c_wchar_p rejects the array during Structure construction.
+            ("pszDisplayName", ctypes.POINTER(ctypes.c_wchar)),
             ("lpszTitle", wintypes.LPCWSTR),
             ("ulFlags", wintypes.UINT),
             ("lpfn", ctypes.c_void_p),

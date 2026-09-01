@@ -469,6 +469,24 @@ def extra_checks(mix, c2, c10, p5, data, videos, p5_track_id):
     check('id="btn-package"' in head and "Build your own mix" in head
           and "Create empty mix" in head,
           "mix builder separates manual creation and complete package")
+    check("select option, select optgroup" in head
+          and "background-color: var(--panel); color: var(--text)" in head,
+          "native select lists keep readable theme colors")
+    check("Preload Voice-Off Audio" in head
+          and "second, music-only audio track" in head,
+          "voice-off preload action explains its purpose")
+    check("Curated status only limits automatic generation" in head
+          and '<option value="curated">Curated only</option>' in head
+          and '<option value="discovery">All detected</option>' in head
+          and '<option value="everything">Everything</option>' in head,
+          "manual and automatic release pools are explained")
+    check('source_pool: everything ? "discovery" : selectedPool' in head
+          and 'include_rejected: everything ||' in head
+          and 'include_vault: everything ||' in head,
+          "Everything pool includes review, rejected, and Vault states")
+    check("releaseMetadataBody({ curated: 1 })" in head
+          and "Save & mark curated" in head,
+          "curating saves release details in one action")
 
     # a release purged between queueing an export and the worker starting it
     # must fail with a readable message, not a raw TypeError from release_path.

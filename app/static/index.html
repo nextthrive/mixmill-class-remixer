@@ -120,6 +120,7 @@
   input[type=text]:focus { outline: none; border-color: var(--accent); }
   input[type=text]:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
   select { min-height: var(--control-height); background: var(--panel); border: 1px solid var(--line); border-radius: 0; color: var(--text); padding: 5px var(--space-2); font-family: inherit; font-size: 12px; max-width: 240px; }
+  select option, select optgroup { background-color: var(--panel); color: var(--text); }
   input::placeholder { color: var(--dim); }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: 14px var(--space-4); margin: 0 0 -1px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
   .card.static { cursor: default; }
@@ -245,6 +246,8 @@
   .library-state .btn { flex: 0 0 auto; }
   details .card { margin-left: 22px; }
   details .mixitem { margin-left: 0; }
+  #mix-picker > details > summary { display: flex; align-items: center; gap: var(--space-2); }
+  #mix-picker > details > summary .status-chip { margin-left: auto; font-family: var(--body-font); }
   .npbar { background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: var(--space-3) var(--space-4); margin-top: var(--space-3); display: flex; align-items: center; gap: var(--space-3); }
   .grow, .playback-copy { flex: 1 1 auto; min-width: 0; }
   .release-title-input { flex: 1 1 auto; min-width: 200px; font-size: 16px !important; }
@@ -755,9 +758,9 @@
           <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 1 .7 2.3L11 4l-2.3.7L8 7l-.7-2.3L5 4l2.3-.7zM12 8l.5 1.5L14 10l-1.5.5L12 12l-.5-1.5L10 10l1.5-.5zM4.5 8.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z"/></svg>
           <span class="btn-label">Auto-detect All</span>
         </button>
-        <button class="btn primary" id="btn-extract-all" type="button">
+        <button class="btn primary" id="btn-extract-all" type="button" aria-label="Preload voice-off audio for every release" title="Extract and cache each release's second, music-only audio track so Voice Off starts instantly. Releases without one are skipped.">
           <svg class="toolbar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 8h2m2-4v8m2-6v4m2-7v10m2-7v4m2-2h-1"/></svg>
-          <span class="btn-label">Prepare Voice Audio</span>
+          <span class="btn-label">Preload Voice-Off Audio</span>
         </button>
       </div>
     </div>
@@ -782,7 +785,7 @@
     <div class="row release-meta">
       <input type="text" id="rel-title" class="release-title-input" aria-label="Release title" maxlength="200">
       <input type="text" id="rel-program" class="release-program-input" aria-label="Release program" maxlength="100" placeholder="Program (e.g. BodyPump)">
-      <button class="btn small" id="btn-save-rel" type="button">Save</button>
+      <button class="btn small" id="btn-save-rel" type="button"><span class="btn-label">Save details</span></button>
       <button class="btn small" id="btn-vault-rel" type="button"></button>
     </div>
     <div class="curation-strip">
@@ -790,7 +793,7 @@
         <span class="curation-state" id="rel-curation-state"></span>
         <span class="muted" id="rel-curation-help"></span>
       </div>
-      <button class="btn small" id="btn-curate-rel" type="button"></button>
+      <button class="btn small" id="btn-curate-rel" type="button"><span class="btn-label"></span></button>
     </div>
     <div class="media-stage"><video id="rel-video" controls preload="metadata" aria-label="Release video preview"></video></div>
     <div class="npbar hidden" id="rel-now" role="status" aria-live="polite">
@@ -888,7 +891,7 @@
       <div>
         <span class="manual-mix-kicker">Your tracks · your order</span>
         <h3>Build your own mix</h3>
-        <p>Create an empty mix, then pick tracks from your releases and arrange them yourself. Automatic generation is optional.</p>
+        <p>Create an empty mix, then choose any kept segment yourself—even from releases that still need review. Curated status only limits automatic generation.</p>
       </div>
       <div class="manual-mix-form">
         <label class="manual-mix-field" for="new-mix-name">
@@ -902,16 +905,17 @@
       <div class="generator-heading">
         <div>
           <h3>Generate automatically</h3>
-          <p>Prefer a ready-made mix? Let MixMill select and order marked tracks.</p>
+          <p>Let MixMill select and order tracks. Choose Curated only for reviewed releases, or All detected to include releases that still need review.</p>
         </div>
         <button class="btn small" id="btn-clear-generator" type="button">Clear all</button>
       </div>
       <div class="generator-row">
         <label class="generator-field">
-          <span class="field-label">Source pool</span>
+          <span class="field-label">Release pool</span>
           <select id="gen-source-pool" aria-describedby="gen-pool-help">
-            <option value="curated">Curated</option>
-            <option value="discovery">Discovery</option>
+            <option value="curated">Curated only</option>
+            <option value="discovery">All detected</option>
+            <option value="everything">Everything</option>
           </select>
         </label>
         <label class="generator-field">
@@ -1072,7 +1076,8 @@
         <p class="muted" id="mix-empty">Nothing yet — add tracks from the right.</p>
       </div>
       <div>
-        <h2>Pick from your releases</h2>
+        <h2>Pick any kept segment</h2>
+        <p class="section-copy">Includes Curated releases and releases that still need review. Rejected segments and vaulted releases stay hidden.</p>
         <input type="text" id="picker-filter" class="picker-filter" aria-label="Filter available tracks" maxlength="200" placeholder="Filter tracks…">
         <div id="seg-slot-picker"></div>
         <div id="mix-picker"></div>
@@ -1981,7 +1986,7 @@ $("btn-extract-all").onclick = async () => {
       clearInterval(timer);
       setButtonBusy(btn, false);
       if (j.status === "error") toast.error(j.error);
-      else toast(`Voice audio: ${j.result.extracted} extracted, ${j.result.skipped} without a second track` +
+      else toast(`Voice-off audio ready: ${j.result.extracted} preloaded, ${j.result.skipped} without a second audio track` +
                  (j.result.failed.length ? `, ${j.result.failed.length} failed` : ""));
     }
   }, 1000);
@@ -2131,14 +2136,22 @@ $("btn-auto-tracks").onclick = async () => {
     }, 1000);
   } catch (e) { btn.disabled = false; toast.error(e.message); }
 };
+function releaseMetadataBody(extra = {}) {
+  return {
+    title: $("rel-title").value,
+    program: $("rel-program").value,
+    ...extra
+  };
+}
 $("btn-save-rel").onclick = async () => {
   const button = $("btn-save-rel");
   if (button.dataset.busy) return;
   setButtonBusy(button, true, "Saving…");
   try {
-    rel = await api("/api/releases/" + rel.id, { method: "PATCH",
-      body: { title: $("rel-title").value, program: $("rel-program").value } });
-    toast("Saved");
+    rel = await api("/api/releases/" + rel.id, {
+      method: "PATCH", body: releaseMetadataBody()
+    });
+    toast("Release details saved");
   } catch (error) {
     toast.error(error.message);
   } finally {
@@ -2162,30 +2175,42 @@ $("btn-vault-rel").onclick = async () => {
 };
 function renderCurationState() {
   const state = $("rel-curation-state"), button = $("btn-curate-rel");
+  const label = button.querySelector(".btn-label");
   const kept = rel.tracks.length, rejected = rel.rejected_tracks.length;
   state.classList.toggle("active", !!rel.curated);
   if (rel.curated) {
-    state.textContent = "✓ Curated source";
-    $("rel-curation-help").textContent = `${kept} kept segment${kept === 1 ? "" : "s"}${rejected ? ` · ${rejected} rejected` : ""} · eligible for Curated mixes`;
-    button.textContent = "Return to Discovery";
+    state.textContent = "✓ Curated";
+    $("rel-curation-help").textContent = `${kept} kept segment${kept === 1 ? "" : "s"}${rejected ? ` · ${rejected} rejected` : ""} · included in Curated-only automatic mixes. Manual mixes always show kept segments.`;
+    label.textContent = "Mark as needs review";
     button.disabled = false;
   } else {
-    state.textContent = kept || rejected ? "◐ Discovery source" : "○ No segments detected";
+    state.textContent = kept || rejected ? "◐ Needs review" : "○ No segments detected";
     $("rel-curation-help").textContent = kept
-      ? "Review boundaries, reject what you do not want, then mark this release Curated."
+      ? "Check boundaries and reject unwanted segments. Curating saves release details and adds it to Curated-only automatic mixes."
       : "Auto-detect or add numbered tracks before curating this release.";
-    button.textContent = "Mark curated";
+    label.textContent = "Save & mark curated";
     button.disabled = kept === 0;
   }
 }
 $("btn-curate-rel").onclick = async () => {
+  const button = $("btn-curate-rel");
+  if (button.dataset.busy) return;
+  const makingCurated = !rel.curated;
+  setButtonBusy(button, true, makingCurated ? "Saving & curating…" : "Updating…");
   try {
     rel = await api("/api/releases/" + rel.id, {
-      method: "PATCH", body: { curated: rel.curated ? 0 : 1 }
+      method: "PATCH",
+      body: makingCurated ? releaseMetadataBody({ curated: 1 }) : { curated: 0 }
     });
+    toast(rel.curated
+      ? "Release details saved and marked Curated"
+      : "Release marked as needing review");
+  } catch (e) {
+    toast.error(e.message);
+  } finally {
+    setButtonBusy(button, false);
     renderCurationState();
-    toast(rel.curated ? "Release marked Curated" : "Release returned to Discovery");
-  } catch (e) { toast.error(e.message); }
+  }
 };
 function notesPageLabel(start, end) {
   if (!start) return "No pages";
@@ -2622,12 +2647,17 @@ function syncGenMode() {
 $("gen-mode").onchange = syncGenMode;
 syncGenMode();
 function syncGenPool() {
-  const discovery = $("gen-source-pool").value === "discovery";
-  $("gen-pool-help").textContent = discovery
-    ? "Discovery uses numbered detected segments across Curated and unchecked releases. Unnumbered intros and setup sections stay out."
-    : "Curated uses only releases you checked and explicitly marked Curated.";
+  const pool = $("gen-source-pool").value;
+  $("gen-pool-help").textContent = pool === "everything"
+    ? "Everything uses every numbered segment, including needs-review, rejected, and Vault content. Missing files and unnumbered sections cannot be generated. Other filters still apply."
+    : pool === "discovery"
+      ? "All detected uses numbered kept segments from both Curated releases and releases that still need review. Unnumbered intros, rejected segments, and setup sections stay out."
+      : "Curated only uses kept segments from releases you reviewed and marked Curated. Safest default.";
 }
-$("gen-source-pool").onchange = syncGenPool;
+$("gen-source-pool").onchange = () => {
+  syncGenPool();
+  updateGenFilterCount();
+};
 syncGenPool();
 const generatorAdvancedIds = [
   "gen-name", "gen-slot-min", "gen-slot-max", "gen-rel-min", "gen-rel-max",
@@ -2636,7 +2666,8 @@ const generatorAdvancedIds = [
 const generatorToggleIds = ["gen-include-rejected", "gen-include-vault"];
 function updateGenFilterCount() {
   const count = generatorAdvancedIds.filter(id => $(id).value.trim()).length +
-    generatorToggleIds.filter(id => $(id).checked).length;
+    generatorToggleIds.filter(id => $(id).checked).length +
+    ($("gen-source-pool").value === "everything" ? 1 : 0);
   $("gen-filter-count").textContent = `${count} active`;
 }
 generatorAdvancedIds.forEach(id => $(id).addEventListener("input", updateGenFilterCount));
@@ -2672,11 +2703,13 @@ $("btn-generate").onclick = async () => {
   if (button.dataset.busy) return;
   setButtonBusy(button, true, "Generating…");
   try {
+    const selectedPool = $("gen-source-pool").value;
+    const everything = selectedPool === "everything";
     const body = {
       mode: $("gen-mode").value,
-      source_pool: $("gen-source-pool").value,
-      include_rejected: $("gen-include-rejected").checked,
-      include_vault: $("gen-include-vault").checked,
+      source_pool: everything ? "discovery" : selectedPool,
+      include_rejected: everything || $("gen-include-rejected").checked,
+      include_vault: everything || $("gen-include-vault").checked,
       minutes: genInteger("gen-minutes", "Target minutes") ?? 60
     };
     if (body.mode === "program") body.program = $("gen-program").value;
@@ -3008,7 +3041,8 @@ function renderPickerList() {
     const det = document.createElement("details");
     if (q) det.open = true;
     const sum = document.createElement("summary");
-    sum.textContent = r.title + (r.program ? ` (${r.program})` : "");
+    const releaseLabel = r.title + (r.program ? ` (${r.program})` : "");
+    sum.innerHTML = `<span>${esc(releaseLabel)}</span><span class="status-chip${r.curated ? " success" : ""}">${r.curated ? "Curated" : "Needs review"}</span>`;
     det.appendChild(sum);
     for (const t of tracks) {
       const row = document.createElement("div");

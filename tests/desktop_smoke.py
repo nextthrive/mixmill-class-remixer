@@ -36,10 +36,23 @@ def digest(path: Path) -> str:
 def main() -> None:
     launcher_source = (ROOT / "desktop" / "launcher.py").read_text(encoding="utf-8")
     backend_source = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    frontend_source = (ROOT / "app" / "static" / "index.html").read_text(encoding="utf-8")
     build_source = (ROOT / "tools" / "build_windows.ps1").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
     check('webview.settings["ALLOW_DOWNLOADS"] = True' in launcher_source,
           "desktop enables native Save As downloads")
+    check('("pszDisplayName", ctypes.POINTER(ctypes.c_wchar))' in launcher_source,
+          "folder picker accepts its writable Unicode display-name buffer")
+    check("select option, select optgroup" in frontend_source
+          and "Preload Voice-Off Audio" in frontend_source,
+          "desktop dropdowns stay readable and voice-off preload is clear")
+    check("Curated status only limits automatic generation" in frontend_source
+          and "releaseMetadataBody({ curated: 1 })" in frontend_source,
+          "curation scope is explained and curating also saves details")
+    check('<option value="everything">Everything</option>' in frontend_source
+          and 'include_rejected: everything ||' in frontend_source
+          and 'include_vault: everything ||' in frontend_source,
+          "Everything generation includes rejected and Vault content")
     check(backend_source.count("subprocess.run(") == 1
           and "subprocess.CREATE_NO_WINDOW" in backend_source,
           "media subprocesses stay hidden on Windows")

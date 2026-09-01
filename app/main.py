@@ -2712,7 +2712,7 @@ def generate_mix(body: GenerateIn):
     rng = random.Random(body.seed)
     picked = _ladder_pick(pool, target, rng, required_slots,
                           body.max_per_release)
-    label = "discovery" if body.source_pool == "discovery" else "auto"
+    label = "all detected" if body.source_pool == "discovery" else "curated"
     if body.mode == "program":
         default_name = f"{body.program} {label} {time.strftime('%Y-%m-%d %H:%M')}"
     else:
