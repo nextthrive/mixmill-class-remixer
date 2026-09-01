@@ -1829,7 +1829,10 @@ def _auto_tracks_impl(release_id: int, job: dict | None = None) -> dict:
     them, otherwise align each song from the music folder against the video's
     audio and cut a segment per song."""
     res = import_chapters(release_id)
-    if res["imported"]:
+    # Existing chapter rows are still proof that this file uses chapters.
+    # Falling through when every chapter was skipped makes a second run scan
+    # the music folder and create near-overlapping duplicate tracks.
+    if res["chapters"]:
         return {"method": "chapters", **res}
     with db() as conn:
         row = get_release_or_404(conn, release_id)
@@ -2061,7 +2064,7 @@ def import_chapters(release_id: int):
     info = ffprobe_json(release_path(row), "-show_chapters")
     chapters = info.get("chapters", [])
     if not chapters:
-        return {"imported": 0, "skipped": 0,
+        return {"chapters": 0, "imported": 0, "skipped": 0,
                 "message": "no chapter markers found in this file"}
     imported, skipped = 0, 0
     with db() as conn:
@@ -2089,7 +2092,7 @@ def import_chapters(release_id: int):
             imported += 1
         if imported:
             conn.execute("UPDATE releases SET curated=0 WHERE id=?", (release_id,))
-    return {"imported": imported, "skipped": skipped}
+    return {"chapters": len(chapters), "imported": imported, "skipped": skipped}
 
 
 # ---------------------------------------------------------------- tracks

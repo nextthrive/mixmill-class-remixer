@@ -9,7 +9,7 @@ Docker, or Git.
 1. Download the installer or portable ZIP from the project's GitHub Releases
    page. Avoid mirrors and reposts.
 2. Verify the files against `SHA256SUMS.txt`.
-3. Run `MixMill-1.0.0-Windows-x64-Setup.exe`. Because the community build is
+3. Run `MixMill-1.0.1-Windows-x64-Setup.exe`. Because the community build is
    currently unsigned, Windows may show a SmartScreen warning. Confirm the
    filename and checksum before choosing **More info → Run anyway**.
 4. On first launch, choose the folder containing release videos.
@@ -63,15 +63,15 @@ Optional signing parameters are `-SignTool` and `-TimestampUrl`.
 
 ## Publish set
 
-For version `1.0.0`, publish these five files together:
+For version `1.0.1`, publish these five files together:
 
-- `MixMill-1.0.0-Windows-x64-Setup.exe`
-- `MixMill-1.0.0-Windows-x64-portable.zip`
-- `MixMill-1.0.0-FFmpeg-bf1b838f2a-source.zip`
-- `MixMill-1.0.0-release.json`
+- `MixMill-1.0.1-Windows-x64-Setup.exe`
+- `MixMill-1.0.1-Windows-x64-portable.zip`
+- `MixMill-1.0.1-FFmpeg-bf1b838f2a-source.zip`
+- `MixMill-1.0.1-release.json`
 - `SHA256SUMS.txt`
 
-Also publish the repository's `v1.0.0` source tag and keep `LICENSE`, privacy,
+Also publish the repository's `v1.0.1` source tag and keep `LICENSE`, privacy,
 support, security, third-party notices, and release notes visible from the
 release page. The manifest truthfully records `signed_release: false` for an
 unsigned community release. Never describe an unsigned file as signed.
@@ -87,7 +87,7 @@ ZIP. PDF previews use bundled PDFium through `pypdfium2`; Poppler is not needed.
 $env:MIXMILL_FFMPEG = (Resolve-Path '.build\vendor\ffmpeg\bin\ffmpeg.exe').Path
 $env:MIXMILL_FFPROBE = (Resolve-Path '.build\vendor\ffmpeg\bin\ffprobe.exe').Path
 .\.build\venv\Scripts\python.exe tests\smoke.py
-.\tests\installer_smoke.ps1 -Setup artifacts\MixMill-1.0.0-Windows-x64-Setup.exe
+.\tests\installer_smoke.ps1 -Setup artifacts\MixMill-1.0.1-Windows-x64-Setup.exe
 ```
 
 Before announcing broadly, test the hosted downloads on clean Windows 10 and 11
@@ -97,7 +97,7 @@ terminal windows flash.
 
 ## GitHub release checklist
 
-- Make the repository public and add a `v1.0.0` tag from the exact tested commit.
+- Make the repository public and add a `v1.0.1` tag from the exact tested commit.
 - Attach the complete five-file publish set to that tag's GitHub Release.
 - Put the unsigned/SmartScreen disclosure near the download links.
 - Recompute every hosted file's SHA-256 and compare with `SHA256SUMS.txt`.

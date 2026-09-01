@@ -177,6 +177,18 @@ def main():
             r = wait_job(r["job_id"])
         check(r["method"] == "chapters" and r["imported"] == 3,
               f"COMBAT 2 chapters import ({r})")
+        # Repeating detection must remain on the chapter path. Previously an
+        # all-skipped chapter import fell through to music matching and could
+        # add a second, slightly shifted set of tracks.
+        r = req("POST", f"/api/releases/{c2['id']}/auto-tracks")
+        if "job_id" in r:
+            r = wait_job(r["job_id"])
+        check(r["method"] == "chapters" and r["chapters"] == 3
+              and r["imported"] == 0 and r["skipped"] == 3,
+              f"COMBAT 2 repeat chapter import is idempotent ({r})")
+        c2_after_repeat = req("GET", f"/api/releases/{c2['id']}")
+        check(len(c2_after_repeat["tracks"]) == 3,
+              f"COMBAT 2 repeat keeps 3 tracks ({len(c2_after_repeat['tracks'])})")
         # --- auto-tracks: correlation release
         r = req("POST", f"/api/releases/{c10['id']}/auto-tracks")
         if "job_id" in r:

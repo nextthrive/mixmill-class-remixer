@@ -190,7 +190,9 @@ def run(argv: list[str] | None = None) -> int:
         message("MixMill could not start", str(exc), error=True)
         return 1
 
-    mutex = acquire_single_instance()
+    # Build/installer smoke tests use isolated app data and must not be mistaken
+    # for a second interactive instance when the user's MixMill is already open.
+    mutex = None if args.smoke_test else acquire_single_instance()
     if mutex is False:
         message("MixMill", "MixMill is already running.")
         return 0

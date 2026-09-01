@@ -3,7 +3,7 @@
 ## Windows desktop
 
 Want a normal Windows app instead of Docker? Run
-`MixMill-1.0.0-Windows-x64-Setup.exe` (recommended), or extract the portable ZIP and
+`MixMill-1.0.1-Windows-x64-Setup.exe` (recommended), or extract the portable ZIP and
 open `MixMill.exe`. First launch asks for the media folder; Python, Docker, Git,
 and a terminal are not required on the target PC. Desktop data stays under
 `%LOCALAPPDATA%\MixMill` and survives upgrades and uninstall. Use the Start Menu

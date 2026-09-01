@@ -5,10 +5,10 @@ ShowInstDetails show
 ShowUninstDetails show
 
 !ifndef APP_VERSION
-  !define APP_VERSION "1.0.0"
+  !define APP_VERSION "1.0.1"
 !endif
 !ifndef APP_VERSION_NUMERIC
-  !define APP_VERSION_NUMERIC "1.0.0.0"
+  !define APP_VERSION_NUMERIC "1.0.1.0"
 !endif
 
 !define APP_NAME "MixMill"
