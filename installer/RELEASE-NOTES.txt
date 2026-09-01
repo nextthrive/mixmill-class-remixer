@@ -1,9 +1,12 @@
-MixMill Desktop 1.0.1
+MixMill Desktop 1.0.2
 
 Supported on 64-bit Windows 10 version 1809 or newer and Windows 11.
 
-- Repeating Auto-detect no longer creates overlapping duplicate tracks when
-  embedded chapter markers were already imported.
+- Fixed first-launch folder selection on newer packaged Python runtimes.
+- Fixed unreadable program and filter choices in dark dropdown lists.
+- Clarified Curated, All detected, and Everything automatic mix pools.
+- Marking a release Curated now saves its title and program in the same action.
+- Renamed and explained Voice-Off audio preloading.
 
 - MixMill only reads media originals from the folder you choose.
 - Database, settings, caches, logs, backups, and exports stay under
