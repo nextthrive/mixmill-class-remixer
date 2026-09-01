@@ -1,75 +1,142 @@
 # MixMill
 
-## Windows desktop
+Build custom workout-class mixes from videos you already own. MixMill finds your
+releases, helps you check where each track starts and ends, then joins selected
+tracks into one new video. Your original files stay untouched.
 
-Want a normal Windows app instead of Docker? Run
-`MixMill-1.0.1-Windows-x64-Setup.exe` (recommended), or extract the portable ZIP and
-open `MixMill.exe`. First launch asks for the media folder; Python, Docker, Git,
-and a terminal are not required on the target PC. Desktop data stays under
-`%LOCALAPPDATA%\MixMill` and survives upgrades and uninstall. Use the Start Menu
-shortcut **MixMill - Change Media Folder** to select a different library.
+**[Download MixMill for Windows](https://github.com/nextthrive/mixmill-class-remixer/releases/latest)**
 
-**[Download the latest Windows release](https://github.com/nextthrive/mixmill-class-remixer/releases/latest)**
+No video editor required. Windows users do not need Python, Docker, Git, or a
+terminal.
 
-MixMill Desktop 1.0 supports 64-bit Windows 10 (1809+) and Windows 11. Community
-releases may be unsigned, so Windows can show a SmartScreen warning. Download
-only from the [official GitHub Releases page](https://github.com/nextthrive/mixmill-class-remixer/releases) and verify `SHA256SUMS.txt` before
-running it. Authenticode signing remains an optional future improvement.
+## What MixMill does
 
-Build, packaging, security, and verification details: [docs/WINDOWS.md](docs/WINDOWS.md).
-See [privacy](PRIVACY.md), [support](SUPPORT.md), [security](SECURITY.md), and
-[third-party notices](THIRD_PARTY_NOTICES.md).
+- Scans a folder and finds workout release videos.
+- Detects track boundaries from video chapters or matching music files.
+- Lets you preview, rename, trim, accept, or reject detected segments.
+- Builds mixes manually or generates them from reviewed releases.
+- Plays mixes inside the app.
+- Exports a mix as one MP4 video.
+- Builds a study PDF from matching choreography-note pages.
+- Downloads a complete ZIP containing the video, available study notes, and
+  matched music.
 
-This software uses FFmpeg under GNU GPL version 3. Every binary download must
-be accompanied by the versioned FFmpeg corresponding-source ZIP produced by the
-release build and listed in `SHA256SUMS.txt`.
+MixMill does **not** provide or download workout videos, music, or choreography
+notes. You must supply media you are allowed to use. It does not upload media
+to a cloud service or modify your originals.
 
-MixMill is free/open-source software licensed under the GNU Affero General
-Public License, version 3 or later. See [LICENSE](LICENSE). The repository and
-release source tag are the preferred way to inspect, self-host, modify, and
-redistribute it. Donations may support development, but never unlock features
-or change the license.
+## Windows installation
 
-A small self-hosted app for building custom workout mixes out of your Les Mills
-release videos — without editing anything in Premiere.
+1. Open the [latest release](https://github.com/nextthrive/mixmill-class-remixer/releases/latest).
+2. Download `MixMill-1.0.1-Windows-x64-Setup.exe`.
+3. Run the installer. It installs for your Windows account and does not require
+   administrator access.
+4. If Windows SmartScreen shows **Unknown publisher**, confirm the filename and
+   `SHA256SUMS.txt`, then choose **More info → Run anyway**.
+5. Open MixMill and choose the folder containing your workout library.
 
-You point it at your video folder, mark where each track (song) starts and ends
-in each release (once), and from then on you can:
+The portable ZIP is an alternative: extract it and open `MixMill.exe`. MixMill
+supports 64-bit Windows 10 version 1809 or newer and Windows 11.
 
-- **Build mixes** — pick your favourite tracks from any releases, in any order.
-- **Play them live** — the built-in player plays your segments back to back in
-  the browser by seeking inside the original files. No re-encoding, no extra
-  disk space, mixes are instant to create and change.
-- **Export an mp4** — one button turns a mix into a single video file you can
-  cast to a TV or copy to a tablet.
-- **Build a study PDF** — MixMill finds choreography-notes PDFs stored beside
-  releases and assembles only the matching track pages in mix order.
+## Quick start
+
+1. Put every release in its own folder using the example below.
+2. Open MixMill and choose the top-level library folder.
+3. Select **Rescan video folder**.
+4. Open a release and select **Auto-detect tracks**.
+5. Play a few seconds around each boundary. Correct names or times when needed.
+6. Mark the release **Curated** after checking it.
+7. Open **Mixes**. Create an empty mix or generate one automatically.
+8. Add or reorder tracks, preview the result, then export it.
+9. Download the video or the complete package.
 
 ## Library layout
 
-The scanner is built for a layout like this (a "Music" folder next to the
-video is fine — it's ignored, along with NAS system folders like `@eaDir`):
+Keep the video and choreography PDF inside the release folder. Put music files
+inside one subfolder. That subfolder can have any name.
 
-```
-Les Mills/
-├── BodyPump/
-│   ├── BodyPump 120/
-│   │   ├── BODYPUMP120.mp4
-│   │   ├── BODYPUMP120ChoreographyNotes.pdf
-│   │   └── Music/
-│   └── BodyPump 121/...
-├── Core/
-│   └── Core 45/...
+```text
+Workout Library/
+└── BodyCombat/
+    └── BodyCombat 92/
+        ├── BODYCOMBAT92.mp4
+        ├── BODYCOMBAT92ChoreographyNotes.pdf
+        └── Music/
+            ├── 01 Ready or Not.m4a
+            ├── 02 Pum Pum.m4a
+            ├── 03 Hope.m4a
+            └── ...
 ```
 
-The class folder (BodyPump, Core, …) is auto-filled as the release's
-*program*, and the release folder name becomes its title. Flatter layouts work
-too; you can rename anything in the UI afterwards.
+One copy of each file is enough. MixMill reads the files from this folder; it
+does not copy them into its database.
+
+The program folder becomes the program name. The release folder becomes the
+release title. Flatter layouts also work, and names can be changed inside
+MixMill.
 
 Choreography PDFs may use their original vendor filenames. A name containing
 `Choreography` or `Choreo` is preferred when a release folder has several
 PDFs. Track headings such as `03A.` are matched to the numbered MixMill track;
 the source pages remain unchanged in the generated study document.
+
+Supported video files: MP4, M4V, MKV, MOV, AVI, TS, and WebM. Supported music
+files: MP3, M4A, AAC, FLAC, WAV, OGG, Opus, and WMA.
+
+## What is a track segment?
+
+A segment is only a name, start time, and end time saved in MixMill's database.
+It is not another video or music file.
+
+```text
+02 COMBAT 1
+Start: 06:17
+End:   12:19
+```
+
+MixMill can get these times from chapter markers embedded in the video, by
+matching your music files against the video's audio, or from times you enter
+manually. Repeating Auto-detect is safe in version 1.0.1 and newer.
+
+## Release and segment states
+
+- **Discovery** — MixMill found the release, but nobody has checked it yet.
+- **Curated** — you reviewed the release and confirmed its tracks. Automatic
+  mix generation uses Curated releases by default.
+- **Rejected segments** — a recycle bin for unwanted segments. Rejected
+  segments stay out of normal mixes, can be restored, or can be deleted
+  permanently.
+
+## Create and export a mix
+
+Choose **Create empty mix** when you want full control. Choose the generator
+when you want MixMill to select tracks for a target duration. Review generated
+mixes before exporting them.
+
+- **Fast export** keeps the original video encoding and finishes sooner. Cuts
+  begin at a nearby video keyframe, so a short lead-in is possible.
+- **Precise export** re-encodes segments for exact cuts and better compatibility
+  between different source videos. It takes longer.
+
+Windows downloads open a normal **Save As** window. MixMill stores its settings,
+database, backups, caches, and completed exports under
+`%LOCALAPPDATA%\MixMill`. Updating or uninstalling the program preserves that
+folder.
+
+Need every step explained? Read the **[beginner user guide](docs/USER_GUIDE.md)**.
+
+## Open source and privacy
+
+MixMill is free/open-source software licensed under GNU AGPL version 3 or later.
+See [LICENSE](LICENSE). Donations may support development, but never unlock
+features or change the license.
+
+Windows packages include FFmpeg under GNU GPL version 3. Each release includes
+the matching FFmpeg source ZIP and `SHA256SUMS.txt`.
+
+See [privacy](PRIVACY.md), [support](SUPPORT.md), [security](SECURITY.md),
+[Windows build details](docs/WINDOWS.md), and
+[third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Quick start — Docker / Portainer on a NAS
 
@@ -147,20 +214,6 @@ uvicorn app.main:app --host 127.0.0.1 --port 8080
 `MIXMILL_REQUIRE_READ_ONLY=0` removes the operating-system media protection and
 is intended only for isolated development against disposable fixtures.
 
-## Workflow
-
-1. **Library** → open a release. Play the video, pause at a track boundary,
-   click *Set start from playhead*, seek to the end of the song, click *Set end
-   from playhead*, give it a name, *Add track*. Repeat for the tracks you care
-   about (you don't have to mark all of them). You can nudge an existing
-   track's boundaries later with the `start⟟` / `end⟟` buttons.
-   - Try **Import chapters** first — if your files have embedded chapter
-     markers, all tracks appear with zero manual work.
-2. **Mixes** → create a mix, click tracks on the right to add them, reorder
-   with ↑/↓.
-3. **▶ Play** for a live session, or **Export mp4** for a standalone file
-   (check the *Exports* tab for progress and download).
-
 ## Export modes
 
 - **Fast** — lossless stream copy, takes seconds. Each segment starts at the
@@ -172,7 +225,7 @@ is intended only for isolated development against disposable fixtures.
   different resolutions. Slower (roughly real-time or faster depending on your
   NAS CPU).
 
-## v2 features
+## Automation and study tools
 
 - **Automatic DB backups** — a snapshot of the database is taken on every
   startup into `/data/backups` (or `<DATA_DIR>/backups`), keeping the 10 most
@@ -210,7 +263,7 @@ is intended only for isolated development against disposable fixtures.
   regenerate them from the SVG geometry with `python tools/make_icons.py`
   (needs Pillow, dev machine only).
 
-## v3 features
+## Library, preview, and playback tools
 
 - **Grid view** — Library and Mixes switch between list and poster grid; the
   toggle is remembered. Thumbnails are grabbed from each video on demand and
