@@ -52,6 +52,28 @@ print(row["status"] + "|" + (row["error"] or ""))
 """
 
 
+TRACK_CODE_SRC = """
+import json, sys
+from pathlib import Path
+from app import main as m
+
+index = m.choreography_pdf_index(Path(sys.argv[1]))
+music = ["01 H1 It Begins", "02 H2A Could You Be Loved",
+         "03 H2B Waves", "04 H3A You Remain"]
+print(json.dumps({
+    "groups": sorted(index["groups"]),
+    "keys": [m.track_number_key(name) for name in
+             ["03A Cooldown", "B5 Bonus", "H2B Waves", "B2B Awakening"]],
+    "labels": [m.track_code_label(name) for name in
+               ["03A Cooldown", "B5 Bonus", "H2B Waves", "02 H2A Song"]],
+    "group_labels": sorted(group["label"] for groups in index["groups"].values()
+                           for group in groups),
+    "h2b_music": m.music_index_for("H2B Waves", music),
+    "b2b_music": m.music_index_for("B2B Awakening", music),
+}))
+"""
+
+
 def req(method, path, body=None, raw=False, timeout=180):
     r = urllib.request.Request(BASE + path, method=method,
                                headers={"Content-Type": "application/json",
@@ -109,8 +131,8 @@ def check_legacy_curation_migration():
 from app import main as m
 with m.db() as conn:
     release = conn.execute('SELECT curated FROM releases WHERE id=1').fetchone()
-    track = conn.execute('SELECT rejected FROM tracks WHERE id=1').fetchone()
-print(f'{release[0]}|{track[0]}')
+    track = conn.execute('SELECT rejected, music_idx FROM tracks WHERE id=1').fetchone()
+    print(f'{release[0]}|{track[0]}|{track[1]}')
 """
     proc = subprocess.run(
         [sys.executable, "-c", code], cwd=ROOT,
@@ -118,12 +140,48 @@ print(f'{release[0]}|{track[0]}')
              "VIDEO_DIR": str(videos), "DATA_DIR": str(data)},
         capture_output=True, text=True,
     )
-    check(proc.returncode == 0 and proc.stdout.strip().endswith("1|0"),
-          "legacy saved tracks migrate to Curated")
+    check(proc.returncode == 0 and proc.stdout.strip().endswith("1|0|None"),
+          "legacy saved tracks migrate with automatic audio matching "
+          f"(stdout={proc.stdout.strip()!r}, stderr={proc.stderr.strip()!r})")
+
+
+def check_alphanumeric_track_recognition():
+    """Yoga-style H2A/B2B codes survive filenames and PDF headings."""
+    from reportlab.pdfgen import canvas
+
+    tmp = Path(tempfile.mkdtemp(prefix="mixmill-track-codes-"))
+    videos, data, notes = tmp / "videos", tmp / "data", tmp / "notes.pdf"
+    videos.mkdir()
+    data.mkdir()
+    pdf = canvas.Canvas(str(notes))
+    for heading in ("H1 Foundation", "H2A SUN SALUTATIONS", "B2B AWAKENING"):
+        pdf.drawString(44, 760, heading)
+        pdf.showPage()
+    pdf.save()
+    proc = subprocess.run(
+        [sys.executable, "-c", TRACK_CODE_SRC, str(notes)], cwd=ROOT,
+        env={**os.environ, **TEST_ENV,
+             "VIDEO_DIR": str(videos), "DATA_DIR": str(data)},
+        capture_output=True, text=True,
+    )
+    try:
+        result = json.loads(proc.stdout.strip())
+    except json.JSONDecodeError:
+        result = {}
+    check(proc.returncode == 0
+          and result.get("groups") == ["1H", "2BB", "2HA"]
+          and result.get("keys") == ["3A", "5B", "2HB", "2BB"]
+          and result.get("labels") == ["3A", "B5", "H2B", "H2A"]
+          and result.get("group_labels") == ["B2B", "H1", "H2A"]
+          and result.get("h2b_music") == 2
+          and result.get("b2b_music") is None,
+          "alphanumeric track codes match music and choreography without crossing families "
+          f"(result={result!r}, stderr={proc.stderr.strip()!r})")
 
 
 def main():
     check_legacy_curation_migration()
+    check_alphanumeric_track_recognition()
     tmp = Path(tempfile.mkdtemp(prefix="mixmill-smoke-"))
     videos, data = tmp / "videos", tmp / "data"
     subprocess.run([sys.executable, str(ROOT / "tests" / "make_fixtures.py"),
@@ -209,12 +267,28 @@ def main():
 
         # --- mix + music pairing
         c2_tracks = req("GET", f"/api/releases/{c2['id']}")["tracks"]
+        req("PATCH", f"/api/tracks/{c2_tracks[0]['id']}", {"music_index": 2})
+        c2_tracks = req("GET", f"/api/releases/{c2['id']}")["tracks"]
+        check(c2_tracks[0]["music_idx"] == 2
+              and c2_tracks[0]["music_name"] == "03 Cooldown",
+              "library audio fix persists on release track")
+        try:
+            req("PATCH", f"/api/tracks/{c2_tracks[0]['id']}", {"music_index": 99})
+        except urllib.error.HTTPError as error:
+            check(error.code == 400, "invalid library audio fix rejected")
+        else:
+            check(False, "invalid library audio fix rejected")
         mix = req("POST", "/api/mixes", {"name": "Smoke Mix"})
         mix = req("PUT", f"/api/mixes/{mix['id']}/items",
                   {"track_ids": [c2_tracks[0]["id"], c2_tracks[1]["id"]]})
+        check(mix["items"][0]["music_index"] == 2
+              and mix["items"][0]["music_name"] == "03 Cooldown",
+              "mix inherits library audio fix")
+        req("PATCH", f"/api/tracks/{c2_tracks[0]['id']}", {"music_index": None})
+        mix = req("GET", f"/api/mixes/{mix['id']}")
         check(mix["items"][0]["music_index"] == 0
               and mix["items"][0]["music_name"] == "01 Warmup",
-              "music auto-paired by number")
+              "automatic audio match restores across mixes")
 
         # --- voice audio extraction
         body = req("GET", f"/api/releases/{c2['id']}/audio?track=1", raw=True)
@@ -469,6 +543,10 @@ def extra_checks(mix, c2, c10, p5, data, videos, p5_track_id):
     check('id="btn-package"' in head and "Build your own mix" in head
           and "Create empty mix" in head,
           "mix builder separates manual creation and complete package")
+    check("track-audio-pick" in head and "Fixed in library" in head
+          and "Automatic audio matching restored" in head
+          and "Use library match" in head,
+          "release review exposes persistent audio fixes")
     check("select option, select optgroup" in head
           and "background-color: var(--panel); color: var(--text)" in head,
           "native select lists keep readable theme colors")

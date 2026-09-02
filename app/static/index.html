@@ -197,6 +197,11 @@
   .playing-label { color: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap; }
   .playback-labels { display: grid; justify-items: end; gap: 3px; }
   .matched-song { color: var(--text); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+  .track-audio-cell { min-width: 210px; }
+  .track-audio-control { display: flex; align-items: center; gap: var(--space-2); }
+  .track-audio-name { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+  .track-audio-mode { display: block; margin-top: 2px; color: var(--dim); font-size: 9px; letter-spacing: .8px; text-transform: uppercase; }
+  .track-audio-control select { width: 100%; min-width: 150px; max-width: 320px; min-height: 32px; }
   .notes-state { color: var(--dim); font-size: 10px; margin-top: 3px; letter-spacing: .3px; }
   .notes-state.ready { color: var(--green); }
   .notes-state.stale { color: var(--red); }
@@ -538,6 +543,9 @@
     #track-rows td.track-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; border-bottom: 0; padding-top: 10px; }
     #track-rows td.track-actions::before { grid-column: 1 / -1; }
     #track-rows .track-actions .btn { width: 100%; min-width: 0; min-height: var(--touch-target); padding-inline: 3px; }
+    #track-rows td.track-audio-cell { min-width: 0; }
+    #track-rows .track-audio-control { min-width: 0; }
+    #track-rows .track-audio-control .btn { min-height: var(--touch-target); }
     .notes-studio > summary { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
     .notes-studio > summary .status-chip { width: 100%; margin-left: 24px; }
     .notes-studio-head { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
@@ -2452,8 +2460,12 @@ function renderTracks() {
   for (const t of rel.tracks) {
     const tr = document.createElement("tr");
     tr._track = t;
+    const manualAudio = Number.isInteger(t.music_idx);
     tr.innerHTML = `<td data-label="Detected track">${esc(t.name)}</td>
-      <td data-label="Matched audio" class="matched-song">${t.music_name ? `♪ ${esc(t.music_name)}` : "No audio matched"}</td>
+      <td data-label="Matched audio" class="track-audio-cell"><div class="track-audio-control">
+        <span class="track-audio-name">${t.music_name ? `♪ ${esc(t.music_name)}` : "No audio matched"}${manualAudio ? '<span class="track-audio-mode">Fixed in library</span>' : ""}</span>
+        <button class="btn small track-audio-pick" type="button" aria-label="${t.music_name ? "Change" : "Choose"} matched audio for ${esc(t.name)}">${t.music_name ? "Change" : "Choose"}</button>
+      </div></td>
       <td data-label="Notes" class="notes-state track-notes-state">Checking…</td>
       <td data-label="Start"><button class="tracktime" type="button" aria-label="Jump to ${esc(t.name)} start">${fmt(t.start)}</button></td>
       <td data-label="End"><button class="tracktime" type="button" aria-label="Jump near ${esc(t.name)} end">${fmt(t.end)}</button></td>
@@ -2461,6 +2473,7 @@ function renderTracks() {
       <td data-label="Status" class="playing-label track-state"></td>
       <td data-label="Edit boundaries" class="track-actions"><button class="btn small" type="button">start⟟</button> <button class="btn small" type="button">end⟟</button> <button class="btn small danger" type="button">✕</button></td>`;
     const [startCell, endCell] = tr.querySelectorAll(".tracktime");
+    tr.querySelector(".track-audio-pick").onclick = event => pickReleaseSong(event, t);
     startCell.onclick = () => { $("rel-video").currentTime = t.start; };
     endCell.onclick = () => { $("rel-video").currentTime = Math.max(0, t.end - 3); };
     const [bStart, bEnd, bDel] = tr.querySelectorAll(".track-actions button");
@@ -2488,6 +2501,37 @@ function renderTracks() {
   renderRejectedTracks();
   updateReleasePlaybackUI();
   loadReleaseChoreographyStatus();
+}
+async function pickReleaseSong(event, track) {
+  event.stopPropagation();
+  const control = event.currentTarget.closest(".track-audio-control");
+  const files = await musicFor(rel.id);
+  if (!files.length) return toast("This release has no music folder");
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", `Matched audio for ${track.name}`);
+  select.innerHTML = '<option value="auto">Auto · by track number</option>' +
+    files.map(file => `<option value="${file.index}">${esc(file.name)}</option>`).join("");
+  select.value = Number.isInteger(track.music_idx) ? String(track.music_idx) : "auto";
+  control.replaceChildren(select);
+  select.focus();
+  let saving = false;
+  select.onchange = async () => {
+    saving = true;
+    select.disabled = true;
+    const automatic = select.value === "auto";
+    try {
+      await api(`/api/tracks/${track.id}`, {
+        method: "PATCH", body: { music_index: automatic ? null : +select.value },
+      });
+      rel = await api(`/api/releases/${rel.id}`);
+      renderTracks();
+      toast(automatic ? "Automatic audio matching restored" : "Library audio match saved");
+    } catch (error) {
+      toast.error(error.message);
+      renderTracks();
+    }
+  };
+  select.onblur = () => { if (!saving && document.body.contains(select)) renderTracks(); };
 }
 function renderRejectedTracks() {
   const rejected = rel.rejected_tracks || [], section = $("rejected-section");
@@ -2920,8 +2964,11 @@ async function pickSong(e, it, btn) {
   const files = await musicFor(it.release_id);
   if (!files.length) return toast("This release has no music folder");
   const sel = document.createElement("select");
-  sel.innerHTML = `<option value="auto">auto (by track number)</option>` +
-    files.map(f => `<option value="${f.index}"${f.index === it.music_index ? " selected" : ""}>${esc(f.name)}</option>`).join("");
+  const inherited = Number.isInteger(it.track_music_idx)
+    ? `Use library match · ${it.music_name || "unavailable"}`
+    : "Auto · by track number";
+  sel.innerHTML = `<option value="auto"${it.music_idx == null ? " selected" : ""}>${esc(inherited)}</option>` +
+    files.map(f => `<option value="${f.index}"${f.index === it.music_idx ? " selected" : ""}>${esc(f.name)}</option>`).join("");
   btn.replaceWith(sel);
   sel.focus();
   sel.onchange = async () => {

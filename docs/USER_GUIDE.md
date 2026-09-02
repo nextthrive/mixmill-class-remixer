@@ -81,6 +81,10 @@ MixMill tries these methods:
 1. Read chapter markers embedded in the video.
 2. If the video has no chapters, compare music files with the video's audio.
 
+Track codes such as `H1`, `H2A`, and `B2B` are recognized in chapter names,
+music filenames, and choreography headings. A leading music-file order such as
+`02 H2A` does not replace the real `H2A` track code.
+
 Detection may take time because MixMill must analyze media. Leave the app open
 until the job finishes.
 
@@ -98,7 +102,10 @@ For each segment:
 3. Play near the end.
 4. Confirm that the track ends at the shown time.
 5. Correct the name, start, or end when needed.
-6. Check the matched music file.
+6. Check the matched music file. Select **Choose** or **Change** beside it to
+   fix the match for this release and every mix that uses the track. Select
+   **Auto · by track number** to restore automatic matching. A song chosen
+   inside one mix remains that mix's override.
 7. Check the mapped choreography pages when a PDF exists.
 
 Keyboard shortcuts help during review:

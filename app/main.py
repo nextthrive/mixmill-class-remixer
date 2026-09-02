@@ -386,7 +386,8 @@ def init_db():
                 start REAL NOT NULL,
                 end REAL NOT NULL,
                 position INTEGER DEFAULT 0,
-                rejected INTEGER DEFAULT 0
+                rejected INTEGER DEFAULT 0,
+                music_idx INTEGER
             );
             CREATE TABLE IF NOT EXISTS mixes (
                 id INTEGER PRIMARY KEY,
@@ -465,6 +466,7 @@ with db() as _conn:
         pass
     for _stmt in ("ALTER TABLE mixes ADD COLUMN audio INTEGER DEFAULT 0",
                   "ALTER TABLE mix_items ADD COLUMN music_idx INTEGER",
+                  "ALTER TABLE tracks ADD COLUMN music_idx INTEGER",
                   "ALTER TABLE releases ADD COLUMN vaulted INTEGER DEFAULT 0",
                   "ALTER TABLE releases ADD COLUMN added_at REAL"):
         try:
@@ -583,21 +585,64 @@ def keyframe_before(path: Path, t: float) -> float:
 
 
 TRACKNUM_RE = re.compile(
-    r"^\s*(?:0*(\d+)([A-Za-z]?)|([A-Za-z])0*(\d+))(?![A-Za-z0-9])"
+    r"^\s*(?:0*(?P<number>\d+)(?P<suffix>[A-Za-z]?)|"
+    r"(?P<prefix>[A-Za-z])0*(?P<pref_number>\d+)(?P<pref_suffix>[A-Za-z]?))"
+    r"(?![A-Za-z0-9])"
 )
+TRACK_CODE_AFTER_ORDINAL_RE = re.compile(
+    r"^\s*0*\d+(?:\s*[-_.:]\s*|\s+)"
+    r"(?P<prefix>[A-Za-z])0*(?P<number>\d+)(?P<suffix>[A-Za-z]?)"
+    r"(?![A-Za-z0-9])"
+)
+
+
+def _track_key_from_match(match: re.Match) -> str:
+    groups = match.groupdict()
+    number = groups.get("number") or groups.get("pref_number")
+    prefix = (groups.get("prefix") or "").upper()
+    suffix = (
+        groups.get("suffix")
+        if groups.get("number") is not None
+        else groups.get("pref_suffix")
+    ) or ""
+    return str(int(number)) + prefix + suffix.upper()
+
+
+def _track_label_from_match(match: re.Match) -> str:
+    """Human-readable normalized code, retaining its original letter order."""
+    groups = match.groupdict()
+    if groups.get("pref_number") is not None:
+        return ((groups.get("prefix") or "").upper()
+                + str(int(groups["pref_number"]))
+                + (groups.get("pref_suffix") or "").upper())
+    return ((groups.get("prefix") or "").upper()
+            + str(int(groups["number"]))
+            + (groups.get("suffix") or "").upper())
+
+
+def track_code_label(name: str) -> str | None:
+    """Track code formatted as the source wrote it, without leading zeroes."""
+    value = name or ""
+    match = TRACK_CODE_AFTER_ORDINAL_RE.match(value) or TRACKNUM_RE.match(value)
+    return _track_label_from_match(match) if match else None
 
 
 def track_number_key(name: str) -> str | None:
     """Normalize track labels used by media and notes.
 
-    ``03A`` and vendor-style bonus label ``A03`` both become ``3A``.
+    ``03A`` and vendor-style bonus label ``A03`` both become ``3A``. Compound
+    program codes retain both letters: ``H2A`` becomes ``2HA`` and stays
+    distinct from ``B2A``. In music filenames such as ``02 H2A Title``, the
+    program code wins over the leading file-order number.
     """
-    m = TRACKNUM_RE.match(name or "")
+    value = name or ""
+    embedded = TRACK_CODE_AFTER_ORDINAL_RE.match(value)
+    if embedded:
+        return _track_key_from_match(embedded)
+    m = TRACKNUM_RE.match(value)
     if not m:
         return None
-    if m.group(1) is not None:
-        return str(int(m.group(1))) + m.group(2).upper()
-    return str(int(m.group(4))) + m.group(3).upper()
+    return _track_key_from_match(m)
 
 
 RELNUM_RE = re.compile(r"(\d+)\s*$")
@@ -689,7 +734,15 @@ def music_files(row) -> list[Path]:
 
 
 _PDF_TRACK_HEADING_RE = re.compile(
-    r"(?<![A-Za-z0-9])(?:0*(\d{2})([A-Za-z]?)|([A-Za-z])0*(\d{1,2}))\.\s+(?=[A-Z])"
+    r"(?<![A-Za-z0-9])(?:0*(?P<number>\d{1,2})(?P<suffix>[A-Za-z]?)|"
+    r"(?P<prefix>[A-Za-z])0*(?P<pref_number>\d{1,2})(?P<pref_suffix>[A-Za-z]?))"
+    r"\.\s+(?=[A-Za-z])"
+)
+_PDF_BARE_TRACK_HEADING_RE = re.compile(
+    r"^[ \t]*(?:0*(?P<number>\d{1,2})(?P<suffix>[A-Za-z]?)|"
+    r"(?P<prefix>[A-Za-z])0*(?P<pref_number>\d{1,2})(?P<pref_suffix>[A-Za-z]?))"
+    r"[ \t]+(?=[A-Za-z])",
+    re.MULTILINE,
 )
 _PDF_DURATION_RE = re.compile(r"(?<!\d)(\d{1,2}):([0-5]\d)\s*mins?\b", re.I)
 _CHOREOGRAPHY_INDEX_CACHE: dict[str, tuple[int, int, dict]] = {}
@@ -775,19 +828,20 @@ def choreography_pdf_index(path: Path) -> dict:
             if not reader.pages or len(reader.pages) > 2000:
                 raise ValueError("unsupported page count")
             page_keys: list[str | None] = []
+            page_labels: list[str | None] = []
             page_text: list[str] = []
             for page in reader.pages:
                 try:
                     text = page.extract_text() or ""
                 except Exception:  # noqa: BLE001
                     text = ""
-                keys = set()
-                for match in _PDF_TRACK_HEADING_RE.finditer(text):
-                    if match.group(1) is not None:
-                        keys.add(str(int(match.group(1))) + match.group(2).upper())
-                    else:
-                        keys.add(str(int(match.group(4))) + match.group(3).upper())
+                labels = {}
+                for pattern in (_PDF_TRACK_HEADING_RE, _PDF_BARE_TRACK_HEADING_RE):
+                    for match in pattern.finditer(text):
+                        labels[_track_key_from_match(match)] = _track_label_from_match(match)
+                keys = set(labels)
                 page_keys.append(next(iter(keys)) if len(keys) == 1 else None)
+                page_labels.append(labels.get(page_keys[-1]))
                 page_text.append(text)
             # A continuation page without its own title belongs to the same
             # track only when both neighbours agree. Never propagate into
@@ -815,6 +869,7 @@ def choreography_pdf_index(path: Path) -> dict:
                 })
                 groups[key].append({
                     "pages": pages,
+                    "label": page_labels[pages[0]] or key,
                     "durations": durations,
                     "express": bool(re.search(r"\b(?:EXP|EXPRESS)\b", text, re.I)),
                 })
@@ -897,6 +952,7 @@ def choreography_options_for_track(index: dict, track_name: str,
         kind = "Express" if group["express"] else "Full"
         page_label = str(pages[0] + 1) if len(pages) == 1 else f"{pages[0] + 1}-{pages[-1] + 1}"
         details = " / ".join(duration_labels) if duration_labels else kind
+        code_label = group.get("label") or candidate_key
         options.append({
             "key": candidate_key,
             "pages": pages,
@@ -905,7 +961,7 @@ def choreography_options_for_track(index: dict, track_name: str,
             "durations": group["durations"],
             "express": group["express"],
             "recommended": i == recommended,
-            "label": f"{candidate_key} · pages {page_label} · {details}",
+            "label": f"{code_label} · pages {page_label} · {details}",
         })
     return key, options
 
@@ -962,8 +1018,9 @@ def resolve_choreography_mapping(index: dict, track: dict,
             source_pages=[page + 1 for page in chosen["pages"]],
         )
     else:
+        code_label = track_code_label(track["name"]) or key
         result["reason"] = (
-            f"Track {key} was not found in choreography PDF"
+            f"Track {code_label} was not found in choreography PDF"
             if key else "Track number is missing"
         )
     return result
@@ -1326,6 +1383,7 @@ class TrackPatch(StrictModel):
     start: float | None = Field(default=None, ge=0, le=86400)
     end: float | None = Field(default=None, gt=0, le=86400)
     rejected: int | None = None
+    music_index: int | None = Field(default=None, ge=0, le=1000)
 
 
 class ChoreographyMappingIn(StrictModel):
@@ -1466,7 +1524,7 @@ def list_releases(include_tracks: bool = False):
                 names = ([clean_name(f.stem) for f in music_files(r)]
                          if r["tracks"] else [])
                 for t in r["tracks"]:
-                    idx = music_index_for(t["name"], names)
+                    idx = music_index_for(t["name"], names, t["music_idx"])
                     t["music_index"] = idx
                     t["music_name"] = names[idx] if idx is not None else None
     return releases
@@ -1497,7 +1555,7 @@ def get_release(release_id: int):
     all_tracks = tracks + rejected_tracks
     names = [clean_name(f.stem) for f in music_files(release)] if all_tracks else []
     for track in all_tracks:
-        idx = music_index_for(track["name"], names)
+        idx = music_index_for(track["name"], names, track["music_idx"])
         track["music_index"] = idx
         track["music_name"] = names[idx] if idx is not None else None
     return {**release, "tracks": tracks, "rejected_tracks": rejected_tracks}
@@ -2121,13 +2179,19 @@ def patch_track(track_id: int, body: TrackPatch):
         start = body.start if body.start is not None else row["start"]
         end = body.end if body.end is not None else row["end"]
         rejected = body.rejected if body.rejected is not None else row["rejected"]
+        music_idx = (body.music_index if "music_index" in body.model_fields_set
+                     else row["music_idx"])
         if end <= start:
             raise HTTPException(400, "end must be after start")
         if rejected not in (0, 1):
             raise HTTPException(400, "rejected must be 0 or 1")
+        if music_idx is not None:
+            release = get_release_or_404(conn, row["release_id"])
+            if music_idx >= len(music_files(release)):
+                raise HTTPException(400, "music index does not exist for this release")
         conn.execute(
-            "UPDATE tracks SET name=?, start=?, end=?, rejected=? WHERE id=?",
-            (name, start, end, rejected, track_id)
+            "UPDATE tracks SET name=?, start=?, end=?, rejected=?, music_idx=? WHERE id=?",
+            (name, start, end, rejected, music_idx, track_id)
         )
         row = conn.execute("SELECT * FROM tracks WHERE id=?", (track_id,)).fetchone()
     return dict(row)
@@ -2269,6 +2333,7 @@ def mix_detail(conn, mix_id: int):
     items = conn.execute(
         """SELECT mi.id AS item_id, mi.position, mi.music_idx,
                   t.id AS track_id, t.name, t.start, t.end,
+                  t.music_idx AS track_music_idx,
                   r.id AS release_id, r.relpath, r.title AS release_title,
                   r.program, r.missing
            FROM mix_items mi
@@ -2278,15 +2343,17 @@ def mix_detail(conn, mix_id: int):
         (mix_id,),
     ).fetchall()
     out = {**dict(mix), "items": [dict(i) for i in items]}
-    # pair each item with its song from the release's music folder: a manual
-    # pick (music_idx) wins, otherwise match by the shared track numbering
+    # Pair each item with its song from the release's music folder. A per-mix
+    # pick wins, then the release-review pick, then automatic track numbering.
     music_cache: dict[int, list[str]] = {}
     for it in out["items"]:
         rid = it["release_id"]
         if rid not in music_cache:
             music_cache[rid] = [clean_name(f.stem) for f in music_files(it)]
         names = music_cache[rid]
-        idx = music_index_for(it["name"], names, it["music_idx"])
+        manual = (it["music_idx"] if it["music_idx"] is not None
+                  else it["track_music_idx"])
+        idx = music_index_for(it["name"], names, manual)
         it["music_index"] = idx
         it["music_name"] = names[idx] if idx is not None else None
         del it["relpath"]  # internal detail, not part of the API shape
