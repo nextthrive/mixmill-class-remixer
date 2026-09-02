@@ -136,8 +136,9 @@ Need every step explained? Read the **[beginner user guide](docs/USER_GUIDE.md)*
 ## Open source and privacy
 
 MixMill is free/open-source software licensed under GNU AGPL version 3 or later.
-See [LICENSE](LICENSE). Donations may support development, but never unlock
-features or change the license.
+See [LICENSE](LICENSE). If MixMill helps you, you can
+[support ongoing development on Ko-fi](https://ko-fi.com/nextthrive).
+Donations never unlock features or change the license.
 
 Windows packages include FFmpeg under GNU GPL version 3. Each release includes
 the matching FFmpeg source ZIP and `SHA256SUMS.txt`.
