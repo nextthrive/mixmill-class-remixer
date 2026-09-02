@@ -1,12 +1,12 @@
-MixMill Desktop 1.0.2
+MixMill Desktop 1.0.3
 
 Supported on 64-bit Windows 10 version 1809 or newer and Windows 11.
 
-- Fixed first-launch folder selection on newer packaged Python runtimes.
-- Fixed unreadable program and filter choices in dark dropdown lists.
-- Clarified Curated, All detected, and Everything automatic mix pools.
-- Marking a release Curated now saves its title and program in the same action.
-- Renamed and explained Voice-Off audio preloading.
+- Added persistent audio correction inside the Library release editor.
+- Mixes now inherit corrected song matches from their source releases.
+- Improved music filename recognition for codes such as H2A, H2B, and B2B.
+- Improved choreography PDF recognition for compound and bare track headings.
+- Kept similarly numbered H and B track families from matching each other.
 
 - MixMill only reads media originals from the folder you choose.
 - Database, settings, caches, logs, backups, and exports stay under
