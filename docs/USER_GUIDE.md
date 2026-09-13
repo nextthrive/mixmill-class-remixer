@@ -3,6 +3,10 @@
 This guide explains MixMill from the beginning. No video-editing or server
 knowledge is required for the Windows app.
 
+![The MixMill library](images/library.png)
+
+*The Library. Every release MixMill found, with its review state underneath.*
+
 ## 1. What MixMill is
 
 MixMill creates custom workout-class mixes from media you already own.
@@ -19,6 +23,15 @@ MixMill saves small database records describing each track:
 - Matching choreography pages
 
 These records point to your original files. They are not duplicate media files.
+
+### The four tabs
+
+| Tab | What it holds |
+| --- | --- |
+| **Library** | Every release MixMill found, and the editor where you review tracks. |
+| **Mixes** | Your mixes, plus the automatic generator. |
+| **Vault** | Releases parked out of the way. |
+| **Exports** | Finished files waiting to be downloaded. |
 
 ## 2. Install the Windows app
 
@@ -66,15 +79,38 @@ Missing choreography notes prevents study-PDF mapping.
 First launch asks for your media folder. Choose the top-level folder—in the
 example above, choose `Workout Library`.
 
-Select **Rescan video folder**. MixMill searches for supported video files and
-adds each release to the Library.
+Select **Rescan folder**. MixMill searches for supported video files and adds
+each release to the Library.
+
+![Library toolbar](images/library-toolbar.png)
+
+*Left to right: grid or list view, cover source, program filter, search, status
+filters, sort. The buttons on the right act on the whole library.*
 
 To choose a different folder later, use the Start Menu shortcut
 **MixMill - Change Media Folder**.
 
+### Finding one release among hundreds
+
+- **Search** matches release titles as you type.
+- **Program** narrows the library to one program.
+- **Filters** narrows by review state.
+- **Sort** orders by newest, title, or length.
+
+![Status filters](images/library-filters.png)
+
+*Status filters. Combine them freely — Curated plus Not detected shows both.*
+
+The list view is denser and shows kept and rejected counts on one line, which is
+useful when working through a backlog.
+
+![List view](images/library-list.png)
+
 ## 5. Detect tracks
 
 Open a release and select **Auto-detect tracks**.
+
+![A release that still needs review](images/release-needs-review.png)
 
 MixMill tries these methods:
 
@@ -91,9 +127,18 @@ until the job finishes.
 Running Auto-detect again is safe in MixMill 1.0.1 and newer. It does not create
 another set of chapter segments.
 
+**Auto-detect all** at the top of the Library runs the same job across every
+release that has no tracks yet. It is the fastest way to start a large library,
+but review the results release by release afterwards.
+
 ## 6. Review a release
 
 Do not mark a release Curated without checking it.
+
+![The release editor](images/release-editor.png)
+
+*Player on top, detected tracks underneath. The green row is the segment playing
+right now.*
 
 For each segment:
 
@@ -108,12 +153,37 @@ For each segment:
    inside one mix remains that mix's override.
 7. Check the mapped choreography pages when a PDF exists.
 
+![The track table](images/release-tracks.png)
+
+*Each row: detected track, matched audio, notes pages, start, end, length,
+status. **Start⇥** and **End⇥** write the playhead into that row.*
+
 Keyboard shortcuts help during review:
 
 - `Space` — play or pause
 - `Left Arrow` / `Right Arrow` — seek 10 seconds
 - `I` — set start from the playhead
 - `O` — set end from the playhead
+
+### Music
+
+The Music section lists every song MixMill found in the release folder. Play any
+of them to compare a song against the video audio before accepting a boundary.
+
+![The music list](images/release-music.png)
+
+### Choreography notes
+
+Open **Choreography notes** to see which PDF pages belong to each track.
+
+![The choreography mapping studio](images/release-notes.png)
+
+*Automatic mappings are labeled `Auto`. Red text explains why a track has no
+pages. **Preview** shows the page on the right, and **Review issues** filters the
+list down to the tracks that need attention.*
+
+Change a mapping with the dropdown beside a track. Manual choices persist
+through later rescans.
 
 ## 7. Understand states
 
@@ -136,6 +206,14 @@ of normal mixes.
 Use Rejected as a recycle bin when you may want to restore a segment. Permanently
 delete a rejected segment only when you are certain it is unnecessary.
 
+### Vault
+
+**Move to vault** parks a release: it disappears from the Library, the mix picker
+and the generator, but mixes that already use it keep working. **Unvault**
+returns it.
+
+![The Vault](images/vault.png)
+
 ## 8. Create a mix manually
 
 1. Open **Mixes**.
@@ -147,8 +225,17 @@ delete a rejected segment only when you are certain it is unnecessary.
 7. Remove anything you do not want.
 8. Play the mix inside MixMill before exporting it.
 
+![The Mixes tab](images/mixes.png)
+
+*Build your own mix on top, the generator underneath, existing mixes below.*
+
 Creating or editing a mix is instant because MixMill stores references to the
 original videos. It does not create a new video until export.
+
+![The mix editor](images/mix-editor.png)
+
+*Mix contents on the left, the segment picker on the right. Each row shows the
+source release, the timing, and the matched song.*
 
 The manual picker shows every kept segment from both Curated releases and
 releases that still need review. Rejected segments and vaulted releases stay
@@ -167,9 +254,26 @@ hidden. Curated status only limits automatic generation.
 6. Generate the mix.
 7. Review, reorder, replace, or remove tracks.
 
+![The generator](images/generator.png)
+
 Generated mixes are suggestions. Always review them before teaching or sharing.
 You can remove any generated track and replace it from the picker on the right.
 Curated releases are labeled there, making reviewed replacements easy to find.
+
+Automatic mixes are named after the pool and the moment they were made, such as
+`Mixed auto 2026-08-08 22:04`. Rename a mix with the pencil button beside its
+title.
+
+### Advanced filters
+
+![Advanced generator filters](images/generator-advanced.png)
+
+*Restrict the track numbers or release numbers used, force or exclude specific
+slots, cap how many tracks come from one release, or reuse a seed to repeat an
+earlier result.*
+
+Leave every advanced field empty until a generated mix disappoints you. Each
+filter shrinks the pool MixMill can choose from.
 
 ### Voice-Off audio
 
@@ -179,6 +283,11 @@ non-vaulted release so Voice Off starts instantly later. MixMill skips releases
 that contain only one audio stream. Originals stay unchanged.
 
 ## 10. Export and download
+
+![Mix actions](images/mix-export.png)
+
+*Playback, Downloads, Arrange, and Manage. Exports start from the Downloads
+group.*
 
 ### Fast export
 
@@ -202,6 +311,10 @@ Depending on available source files, MixMill can download:
 
 The Windows app opens a normal **Save As** window. Choose the destination folder
 and filename there.
+
+![The Exports tab](images/exports.png)
+
+*Finished files stay cached until downloaded.*
 
 ## 11. Where MixMill saves data
 
@@ -231,7 +344,7 @@ library remains in the folder you selected.
 
 - Confirm that its video uses a supported extension.
 - Confirm that you selected the top-level library folder.
-- Select **Rescan video folder** again.
+- Select **Rescan folder** again.
 
 ### Music does not match
 
@@ -245,7 +358,7 @@ library remains in the folder you selected.
 
 - Put the PDF beside the release video.
 - Prefer a filename containing `Choreography` or `Choreo`.
-- Open Mapping Studio and choose the correct page range manually.
+- Open the mapping studio and choose the correct page range manually.
 
 ### Duplicate-looking tracks appear
 
@@ -266,3 +379,10 @@ exports also remain cached under `%LOCALAPPDATA%\MixMill\data\exports`.
 Read [SUPPORT.md](../SUPPORT.md) before opening an issue. Include the MixMill
 version, Windows version, what you clicked, what you expected, and what happened.
 Never upload copyrighted workout media to a public issue.
+
+---
+
+**About the screenshots.** They come from a real library, but program names,
+release titles, song names, covers, video frames and choreography pages are
+replaced with neutral placeholders. `tools/docs_screenshots.py` regenerates them
+and `tools/docs_demo_skin.js` does the replacing.
