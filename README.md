@@ -4,6 +4,11 @@ Build custom workout-class mixes from videos you already own. MixMill finds your
 releases, helps you check where each track starts and ends, then joins selected
 tracks into one new video. Your original files stay untouched.
 
+![The MixMill library](docs/images/library.png)
+
+*The Library: every release MixMill found, with its review state underneath. The
+[user guide](docs/USER_GUIDE.md) walks through the whole app in screenshots.*
+
 **[Download MixMill for Windows](https://github.com/nextthrive/mixmill-class-remixer/releases/latest)**
 
 No video editor required. Windows users do not need Python, Docker, Git, or a
