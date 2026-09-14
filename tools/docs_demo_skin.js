@@ -90,12 +90,26 @@
   const mixName = (name) =>
     /\d{4}-\d{2}-\d{2}/.test(name) ? programs(name) : MIXES[hash(name) % MIXES.length];
 
-  const TRACKISH = new Set(["music_name", "song", "song_name", "music_file", "filename"]);
+  const TRACKISH = new Set([
+    "music_name", "song", "song_name", "music_file", "filename", "track_name",
+  ]);
   // Real choreography PDFs are named after the release they belong to.
   const FILE_FIELDS = { source_name: "Choreography Notes.pdf" };
   const isSegment = (o) => o && typeof o === "object" && "start" in o && "end" in o;
   // /api/releases/{id}/music rows: {index, name, filename}
   const isMusicRow = (o) => o && typeof o === "object" && "index" in o && "filename" in o;
+  // /api/releases/{id}/choreography-notes tracks[]: {track_id, name, mapping_mode}.
+  // These carry the same tracks.name the segment rows do, so the notes studio and
+  // the track table end up showing one track under one name.
+  const isNotesRow = (o) => o && typeof o === "object" && "track_id" in o && "mapping_mode" in o;
+  // Their options[] labels open with a heading read out of the PDF:
+  // "02 MIXED IMPACT · pages 9-11 · 4:36". Only the heading is replaced — the
+  // pages and durations are what the dropdown exists to show.
+  const isNotesOption = (o) => o && typeof o === "object" && "recommended" in o && "page_start" in o;
+  const optionLabel = (s) => {
+    const [heading, ...rest] = s.split(" · ");
+    return [songName(heading), ...rest].join(" · ");
+  };
 
   const walk = (node, parent) => {
     if (Array.isArray(node)) return node.map((v) => walk(v, parent));
@@ -116,7 +130,9 @@
           if (k in FILE_FIELDS) out[k] = FILE_FIELDS[k];
           else if (k === "title" || k === "relpath") out[k] = v;
           else if (k === "name" && ("item_count" in node || Array.isArray(node.items))) out[k] = v;
-          else if (TRACKISH.has(k) || (k === "name" && (isSegment(node) || isMusicRow(node)))) out[k] = programs(songName(v));
+          else if (k === "label" && isNotesOption(node)) out[k] = programs(optionLabel(v));
+          else if (TRACKISH.has(k)
+            || (k === "name" && (isSegment(node) || isMusicRow(node) || isNotesRow(node)))) out[k] = programs(songName(v));
           else out[k] = programs(v);
         } else out[k] = walk(v, node);
       }
