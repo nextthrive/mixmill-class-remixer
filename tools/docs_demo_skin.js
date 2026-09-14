@@ -44,10 +44,19 @@
       to: PROGRAM_POOL[known.size] || `PROGRAM ${known.size + 1}`,
     });
   };
+  // Titles are learned too. A release object carries its title beside its
+  // program, but a mix item carries only "release_title", so without a registry
+  // that field could only be run through programs() — which leaves a title that
+  // never names its program ("pick a side") untouched.
+  const titles = new Map();
+  const pendingTitles = [];
   const collect = (node) => {
     if (Array.isArray(node)) node.forEach(collect);
     else if (node && typeof node === "object") {
       if (typeof node.program === "string") learn(node.program);
+      if (node.title && typeof node.title === "string" && typeof node.program === "string") {
+        pendingTitles.push([node.title, node.program]);
+      }
       Object.values(node).forEach(collect);
     }
   };
@@ -65,6 +74,27 @@
     const found = base.match(/(\d{1,3})\s*$/);
     const num = found ? found[1] : String(1 + (hash(title) % 40));
     return `${programs(program)} ${num}${paren}`;
+  };
+
+  // Resolved after a whole response has been collected, so every program in it
+  // is known before any title built from one is computed.
+  const learnTitles = () => {
+    for (const [title, program] of pendingTitles.splice(0)) {
+      if (!titles.has(title)) titles.set(title, releaseTitle(title, program));
+    }
+  };
+  // The registry outlives the response that filled it, so a mix item resolves to
+  // the same name the Library showed for that release. Pasted into the console on
+  // the Mixes tab the registry starts cold, so a title that names no known program
+  // gets a made-up name that is stored — later references, and the real release
+  // when it finally loads, all agree with it.
+  const retitle = (s) => {
+    if (titles.has(s)) return titles.get(s);
+    const swapped = programs(s);
+    if (swapped !== s) return swapped;
+    const made = releaseTitle(s, "RELEASE");
+    titles.set(s, made);
+    return made;
   };
 
   // "01 Tonight Is The Night Power Hour 13" -> "01 Rise Up"
@@ -118,8 +148,10 @@
       if (typeof node.name === "string" && ("item_count" in node || Array.isArray(node.items))) {
         node = { ...node, name: mixName(node.name) };
       }
-      if (typeof node.title === "string" && typeof node.program === "string") {
-        const title = releaseTitle(node.title, node.program);
+      // No sibling program needed: the registry already holds the title if it
+      // travelled beside one anywhere in this response or an earlier one.
+      if (node.title && typeof node.title === "string") {
+        const title = retitle(node.title);
         const relpath = typeof node.relpath === "string"
           ? programs(node.relpath.split(node.title).join(title))
           : node.relpath;
@@ -129,6 +161,7 @@
         if (typeof v === "string") {
           if (k in FILE_FIELDS) out[k] = FILE_FIELDS[k];
           else if (k === "title" || k === "relpath") out[k] = v;
+          else if (k === "release_title") out[k] = retitle(v);
           else if (k === "name" && ("item_count" in node || Array.isArray(node.items))) out[k] = v;
           else if (k === "label" && isNotesOption(node)) out[k] = programs(optionLabel(v));
           else if (TRACKISH.has(k)
@@ -149,6 +182,7 @@
     let data;
     try { data = await res.clone().json(); } catch { return res; }
     collect(data);
+    learnTitles();
     return new Response(JSON.stringify(walk(data, null)), {
       status: res.status, statusText: res.statusText, headers: res.headers,
     });
@@ -217,7 +251,7 @@
     skinImages(document);
     maskVideos(document);
   };
-  window.__demoSkin = { refresh, cover, songName, programs, releaseTitle };
+  window.__demoSkin = { refresh, cover, songName, programs, releaseTitle, retitle, titles };
 
   // As a Playwright init script this runs before <body> exists.
   ready(() => {
